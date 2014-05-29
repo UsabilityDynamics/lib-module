@@ -1,4 +1,5 @@
-```/**
+```php
+  /**
    * Init our manager.
    */
   $mm = new UsabilityDynamics\Module\Bootstrap( array(
