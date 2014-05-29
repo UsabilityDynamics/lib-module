@@ -1,4 +1,4 @@
-lib-module
+Modules Manager
 ==========
 
 Module Management
