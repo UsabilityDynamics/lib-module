@@ -1,12 +1,14 @@
 ```php
   /**
    * Init our manager.
+   *
    */
   $mm = new UsabilityDynamics\Module\Bootstrap( array(
-    'api_key' => '{hash}',
+    'api_key' => '{hash}', // required.
+    'check'   => true  // boolean. optional. Check or not for available modules to install.
   ) );
 
-  /** Returns the list of installed modules */``
+  /** Returns the list of installed modules */
   $mm->get_modules();
 
   /** Activates required modules */
