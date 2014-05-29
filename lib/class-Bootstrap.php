@@ -3,7 +3,7 @@
  * Handles Module's management functionality and UI
  * 
  */
-namespace UsabilityDynamics\Installers {
+namespace UsabilityDynamics\Module {
 
   /**
    * Class Bootstrap
@@ -16,10 +16,22 @@ namespace UsabilityDynamics\Installers {
      * Constructor
      *
      */
-    public function __construct() {
+    public function __construct( $args = array() ) {
       
+      $args = (object) wp_parse_args( $args, array(
+        'api_key' => false,
+        'check'   => true,
+      ) );
       
-      
+    }
+    
+    /**
+     * Returns the list of installed modules
+     * 
+     */
+    public function getModules() {
+      $modules = array();
+      return $modules;
     }
     
     /**
@@ -28,7 +40,7 @@ namespace UsabilityDynamics\Installers {
      *
      * @todo: do refactor of code ( get rid of $wp_properties, etc ). peshkov@UD
      */
-    public function load() {
+    public function activateModules( $args = array() ) {
     
       $args = (object) wp_parse_args( $args, array(
         'location' => array(
