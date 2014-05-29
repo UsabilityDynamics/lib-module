@@ -5,7 +5,7 @@
    */
   $mm = new UsabilityDynamics\Module\Bootstrap( array(
     'api_key' => '{hash}', // required.
-    'check'   => true  // boolean. optional. Check or not for available modules to install.
+    'check'   => true  // boolean. optional. Check for available modules to install.
   ) );
 
   /** Returns the list of installed modules */
