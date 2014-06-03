@@ -26,7 +26,6 @@ namespace UsabilityDynamics\Module {
       }
 
       function request_filesystem_credentials( $error = null ) {
-        include_once( ABSPATH . 'wp-admin/includes/file.php' );
         return parent::request_filesystem_credentials( $error );
       }
 

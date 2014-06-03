@@ -6,7 +6,7 @@
  */
 namespace UsabilityDynamics\Module {
 
-  if( !class_exists( 'UsabilityDynamics\Module\Upgrader_Skin_Loader' ) ) {
+  if( !class_exists( 'UsabilityDynamics\Module\Upgrader_Loader' ) ) {
 
     /**
      * Silent Skin
@@ -50,6 +50,11 @@ namespace UsabilityDynamics\Module {
             }
             include_once( wp_normalize_path( ABSPATH ) . 'wp-admin/includes/class-wp-upgrader-skins.php' );
           }
+          /** File functions list ( e.g. request_filesystem_credentials() ) */
+          if( !file_exists( wp_normalize_path( ABSPATH ) . 'wp-admin/includes/file.php' ) ) {
+            throw new \Exception( __( 'Upgrader can not be loaded. Required File\'s location is not found.' ) );
+          }
+          include_once( wp_normalize_path( ABSPATH ) . 'wp-admin/includes/file.php' );
           $instance = new Upgrader( new Upgrader_Skin() );
         } catch ( Exception $e ) {
           /** @todo Add error handler */
