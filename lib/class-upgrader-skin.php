@@ -1,6 +1,8 @@
 <?php
 /**
  * Upgrader Skin
+ * Must not be called directly.
+ * Use Upgrader_Skin_loader for getting instance.
  * The User Interface "Skin" for the Module File Upgrader
  */
 namespace UsabilityDynamics\Module {
