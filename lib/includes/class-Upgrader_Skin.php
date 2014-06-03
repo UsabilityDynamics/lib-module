@@ -1,13 +1,11 @@
 <?php
 /**
- * Class Module
- *
+ * Upgrader Skin
+ * The User Interface "Skin" for the Module File Upgrader
  */
-namespace UsabilityDynamics\WPP {
+namespace UsabilityDynamics\Module {
 
-  include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-
-  if( !class_exists( 'UsabilityDynamics\WPP\Upgrader_Skin' ) ) {
+  if( !class_exists( 'UsabilityDynamics\Module\Upgrader_Skin' ) ) {
 
     /**
      * Silent SKin
@@ -20,11 +18,9 @@ namespace UsabilityDynamics\WPP {
       var $options = array();
 
       function __construct( $args = array() ) {
-
         parent::__construct( array(
           'title' => __( 'Update Module' ),
         ));
-
       }
 
       function request_filesystem_credentials( $error = null ) {
