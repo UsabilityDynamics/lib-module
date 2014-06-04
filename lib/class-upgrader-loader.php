@@ -1,18 +1,17 @@
 <?php
 /**
- * Upgrader Skin Loader.
- 
- * The User Interface "Skin" for the Module File Upgrader
+ * Upgrader Loader.
+ *
  */
 namespace UsabilityDynamics\Module {
 
   if( !class_exists( 'UsabilityDynamics\Module\Upgrader_Loader' ) ) {
 
     /**
-     * Silent Skin
+     * Upgrader Loader
      *
      * @package WordPress
-     * @subpackage Upgrader_Skin
+     * @subpackage Upgrader
      */
     class Upgrader_Loader {
       
@@ -23,7 +22,8 @@ namespace UsabilityDynamics\Module {
       private function __construct() {}
       
       /**
-       *
+       * Init and return Upgrader object.
+       * Determine if all neccessary classes included.
        */
       static public function call() {
         $instance = null;

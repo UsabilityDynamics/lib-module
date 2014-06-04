@@ -80,12 +80,8 @@ namespace UsabilityDynamics\Module {
         $this->cache = isset( $args[ 'cache' ] ) ? $args[ 'cache' ] : $this->cache;
         
         /** Set the list of available and installed modules */
-        $this->modules[ 'installed' ] = $this->loadModules();
-        $this->modules[ 'available' ] = $this->moduleLoadout();    
-        //echo "<pre>"; print_r( $this ); echo "</pre>";die();
-        
-        /** TEMP */
-        //$this->install( 'wp-property-admin-tools' );
+        $this->modules[ 'installed' ] = $this->_loadModules();
+        $this->modules[ 'available' ] = $this->_moduleLoadout();
       }
       
       /**
@@ -94,58 +90,6 @@ namespace UsabilityDynamics\Module {
        */
       public function getModules( $key = false, $default = false ) {
         return $this->_getData( $this->modules, $key, $default );
-      }
-            
-      /**
-       * Ability to define directories to walk for look for modules 
-       * and generate list of all found modules and their settings 
-       * (extracted from PHP header or composer.json). 
-       * http://screencast.com/t/r6rC9WNcl
-       *
-       */
-      public function loadModules() {
-        $modules = array();
-        
-        return $modules;
-      }
-      
-      /**
-       * Makes API call to UD to get list of modules that current system can support.
-       *
-       */
-      private function moduleLoadout() {
-        $response = array();
-        /** Maybe get cache */
-        if( $this->cache ) {
-          $response = get_transient( 'ud:module:loadout' );
-        }
-        /** If there is no cache, do request to server. In other case, just return cache. */
-        if( !empty( $response ) ) {
-          $response = json_decode( $response, true );
-        } else {
-          $modules = $this->getModules( 'installed' );
-          /** Do request to UD */
-          $response = $this->_doRequest( 'loadout', array(
-            'installed' => array(),
-          ) );
-          /** Determine if request was successful */
-          if( !isset( $response[ 'ok' ] ) || $response[ 'ok' ] != true ) {
-            $response = array();
-          } else {
-            $response = !empty( $response[ 'modules' ] ) ? $response[ 'modules' ] : array();
-            /** Prepare response to required modules array ( associative array with where keys must be names of modules ) */
-            $validArr = array();
-            foreach( $response as $k => $v ) {
-              $validArr[ $v[ 'name' ] ] = $v;
-            }
-            $response = $validArr;
-          }
-          if( !empty( $response ) ) {
-            /** Cache our response for day. */
-            set_transient( 'ud:module:loadout', json_encode( $response ), ( 60 * 60 * 24 ) );
-          }
-        }
-        return $response;
       }
       
       /**
@@ -258,6 +202,78 @@ namespace UsabilityDynamics\Module {
       }
       
       /**
+       * Returns the list of installed modules.
+       * Walks through defined directories and looks for modules 
+       * and generate list of all found modules and their settings 
+       * extracted from PHP header. 
+       *
+       * @author peshkov@UD
+       */
+      private function _loadModules() {
+        $modules = array();
+        if ( !empty( $this->path ) && is_dir( $this->path ) ) {
+          if ( $dh = opendir( $this->path ) ) {
+            while ( ( $dir = readdir( $dh ) ) !== false ) {
+              if( !in_array( $dir, array( '.', '..' ) ) && 
+                  is_dir( $this->path . '/' . $dir ) &&
+                  file_exists( $this->path . '/' . $dir . '/composer.json' )
+              ) {
+                $composer = @file_get_contents( $this->path . '/' . $dir . '/composer.json' );
+                $composer = @json_decode( $composer, true );
+                if( is_array( $composer ) && !empty( $composer[ 'name' ] ) ) {
+                  $modules[ $composer[ 'name' ] ] = array(
+                    'path' => $this->path . '/' . $dir,
+                    'data' => $composer,
+                  );
+                }
+              }
+            }
+            closedir( $dh );
+          }
+        }
+        return $modules;
+      }
+      
+      /**
+       * Makes API call to UD to get list of modules that current system can support.
+       *
+       */
+      private function _moduleLoadout() {
+        $response = array();
+        /** Maybe get cache */
+        if( $this->cache ) {
+          $response = get_transient( 'ud:module:loadout' );
+        }
+        /** If there is no cache, do request to server. In other case, just return cache. */
+        if( !empty( $response ) ) {
+          $response = json_decode( $response, true );
+        } else {
+          $modules = $this->getModules( 'installed' );
+          /** Do request to UD */
+          $response = $this->_doRequest( 'loadout', array(
+            'installed' => array(),
+          ) );
+          /** Determine if request was successful */
+          if( !isset( $response[ 'ok' ] ) || $response[ 'ok' ] != true ) {
+            $response = array();
+          } else {
+            $response = !empty( $response[ 'modules' ] ) ? $response[ 'modules' ] : array();
+            /** Prepare response to required modules array ( associative array with where keys must be names of modules ) */
+            $validArr = array();
+            foreach( $response as $k => $v ) {
+              $validArr[ $v[ 'name' ] ] = $v;
+            }
+            $response = $validArr;
+          }
+          if( !empty( $response ) ) {
+            /** Cache our response for day. */
+            set_transient( 'ud:module:loadout', json_encode( $response ), ( 60 * 60 * 24 ) );
+          }
+        }
+        return $response;
+      }
+      
+      /**
        * Returns data.
        *
        */
@@ -304,6 +320,7 @@ namespace UsabilityDynamics\Module {
        *
        * @param string $name Name of request
        * @param array $args
+       * @author peshkov@UD
        */
       private function _doRequest( $name, $args = array(), $method = 'POST' ) {
         $response = false;
