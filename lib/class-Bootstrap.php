@@ -5,76 +5,75 @@
  */
 namespace UsabilityDynamics\Module {
 
-  /**
-   * Class Bootstrap
-   *
-   * @package UsabilityDynamics\Installers
-   */
-  class Bootstrap {
+  if( !class_exists( 'UsabilityDynamics\Module\Bootstrap' ) ) {
 
     /**
-     * Api Key.
-     * @type string
+     * Class Bootstrap
+     *
+     * @package UsabilityDynamics\Installers
+     * @author peshkov@UD
      */
-    private $key = false;
+    class Bootstrap {
+      
+      /**
+       * Manager
+       *
+       * @type object UsabilityDynamics\Module\Manager
+       */
+      private $manager = null;
     
-    /**
-     * Plugin/Module/Library slug. Determines which modules can be installed for current system.
-     * @type string
-     */     
-    private $system = null;
-    
-    /**
-     * Version of current system
-     * @type string
-     */
-    private $version = null;
-    
-    /**
-     * Path, where modules must be installed. It may be defined via UD_MODULES_DIR constant!
-     * @type string
-     */
-    private $path = null;
-    
-    /**
-     * The list of all available modules based on current system and api key
-     * @type array
-     */
-    private $modules = null;
+      /**
+       * Constructor
+       *
+       * @param array $args See information about params inside method.
+       * @author peshkov@UD
+       */
+      public function __construct( $args = array() ) {
+        
+        $args = wp_parse_args( $args, array(
+          // API Key. It's related to current domain.
+          'key' => false,
+          // Plugin's slug. Determines which modules can be installed for current plugin.
+          'system' => null,
+          // System's version. Determines which modules (and their versions) current version supports
+          'version' => null,
+          // Path, where plugin's modules must be installed. It may be defined via UD_MODULES_DIR constant
+          'path' => null,
+          // Use or not use transient memory. 
+          // In some cases, transient memory must not be used ( set '?tmcache=false' to disable cache  ).
+          // ( e.g., need to get the latest information about available modules and their versions ).
+          'cache' => true,
+        ) );
+        
+        /** Determine if global Modules DIR ( UD_MODULES_DIR ) is defined. */
+        $args[ 'path' ] = untrailingslashit( wp_normalize_path( defined( 'UD_MODULES_DIR' ) ? UD_MODULES_DIR : $args[ 'path' ] ) );
+        
+        /** Init our Manager */
+        $this->manager = new Manager( $args );
+        
+        //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
+        
+      }
+      
+      /**
+       * Returns the list of installed modules
+       * 
+       */
+      public function getModules() {
+        return $this->manager->getModules();
+      }
+      
+      /**
+       * Activates available modules
+       *
+       */
+      public function activateModules( $args = array() ) {
+        
+        
+      }
+      
+    }
   
-    /**
-     * Constructor
-     *
-     */
-    public function __construct( $args = array() ) {
-      
-      /** Init our variables */
-      $this->key = isset( $args[ 'key' ] ) ? $args[ 'key' ] : $this->key;
-      $this->system = isset( $args[ 'system' ] ) ? $args[ 'system' ] : $this->system;
-      $this->version = isset( $args[ 'version' ] ) ? $args[ 'version' ] : $this->version;
-      $this->path = untrailingslashit( wp_normalize_path( defined( 'UD_MODULES_DIR' ) ? UD_MODULES_DIR : ( isset( $args[ 'path' ] ) ? $args[ 'path' ] : $this->path ) ) );
-      
-      //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
-      
-    }
-    
-    /**
-     * Returns the list of installed modules
-     * 
-     */
-    public function getList() {
-      return $this->modules;
-    }
-    
-    /**
-     * Activates available modules
-     *
-     */
-    public function activateModules( $args = array() ) {
-      
-      
-    }
-    
   }
 
 }
