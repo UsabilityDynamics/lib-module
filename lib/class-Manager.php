@@ -79,16 +79,34 @@ namespace UsabilityDynamics\Module {
         $this->path = isset( $args[ 'path' ] ) ? $args[ 'path' ] : $this->path;
         $this->cache = isset( $args[ 'cache' ] ) ? $args[ 'cache' ] : $this->cache;
         
-        /** Get the list of available modules */
-        $this->modules[ 'available' ] = $this->moduleLoadout();        
+        /** Set the list of available and installed modules */
+        $this->modules[ 'installed' ] = $this->loadModules();
+        $this->modules[ 'available' ] = $this->moduleLoadout();    
         //echo "<pre>"; print_r( $this ); echo "</pre>";die();
+        
+        /** TEMP */
+        $this->install( 'class_admin_tools' );
       }
       
       /**
-       * Returns modules.
+       * Returns modules data depending on key
+       *
        */
-      public function getModules() {
-        return $this->modules;
+      public function getModules( $key = false, $default = false ) {
+        return $this->_getData( $this->modules, $key, $default );
+      }
+            
+      /**
+       * Ability to define directories to walk for look for modules 
+       * and generate list of all found modules and their settings 
+       * (extracted from PHP header or composer.json). 
+       * http://screencast.com/t/r6rC9WNcl
+       *
+       */
+      public function loadModules() {
+        $modules = array();
+        
+        return $modules;
       }
       
       /**
@@ -105,8 +123,11 @@ namespace UsabilityDynamics\Module {
         if( !empty( $response ) ) {
           $response = json_decode( $response, true );
         } else {
+          $modules = $this->getModules( 'installed' );
           /** Do request to UD */
-          $response = $this->doRequest( 'loadout' );
+          $response = $this->_doRequest( 'loadout', array(
+            'installed' => array(),
+          ) );
           /** Determine if request was successful */
           if( !isset( $response[ 'ok' ] ) || $response[ 'ok' ] != true ) {
             $response = array();
@@ -156,14 +177,13 @@ namespace UsabilityDynamics\Module {
       /**
        * Install Module from Repository
        *
-       * @param null $args
-       *
-       * @todo the current function must be totally refactored. peshkov@UD
-       * @internal param $id
-       * @return bool|void
+       * @param string $module Slug of module which must be installed
        */
-      public function install() {
-        include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
+      public function install( $module ) {
+        
+        //echo "<pre>"; print_r( $module ); echo "</pre>"; die();
+        
+        return null;
 
         $args = Utility::parse_args( $args, array(
           'name'   => '',
@@ -213,15 +233,48 @@ namespace UsabilityDynamics\Module {
         return $_result;
       }
       
+      
+      
       /**
-       * Ability to define directories to walk for look for modules 
-       * and generate list of all found modules and their settings 
-       * (extracted from PHP header or composer.json). 
-       * http://screencast.com/t/r6rC9WNcl
+       * Returns data.
        *
        */
-      public function loadModules() {
-        
+      private function _getData( $data, $key = false, $default = false ) {
+        /** Return all data. */
+        if( !$key ) {
+          return $data;
+        }
+        /** Resolve dot-notated key. */
+        if( strpos( $key, '.' ) ) {
+          return $this->_resolveData( $data, $key, $default );
+        }
+        /** Return value or default. */
+        return isset( $data[ $key ] ) ? $data[ $key ] : $default;
+      }
+      
+      /**
+       * Resolve dot-notated key.
+       *
+       * @source http://stackoverflow.com/questions/14704984/best-way-for-dot-notation-access-to-multidimensional-array-in-php
+       *
+       * @param       $a
+       * @param       $path
+       * @param null  $default
+       *
+       * @internal param array $a
+       * @return array|null
+       */
+      private function _resolveData( $a, $path, $default = null ) {
+        $current = $a;
+        $p = strtok( $path, '.' );
+        while( $p !== false ) {
+          if( !isset( $current[ $p ] ) ) {
+            return $default;
+          }
+          $current = $current[ $p ];
+          $p = strtok( '.' );
+        }
+        return $current;
       }
       
       /**
@@ -230,21 +283,21 @@ namespace UsabilityDynamics\Module {
        * @param string $name Name of request
        * @param array $args
        */
-      private function doRequest( $name, $args = array(), $method = 'GET' ) {
+      private function _doRequest( $name, $args = array(), $method = 'POST' ) {
         $response = false;
-        $args = wp_parse_args( $args, array(
+        /** Prepare URL for request based on method */
+        $url = untrailingslashit( $this->apiUrl ) . '/' . $this->apiController . '/' . $this->apiVersion . '/' . $name;
+        $url .= '?' . http_build_query( array(
           'key' => $this->key,
           'system' => $this->system,
           'version' => $this->version,
         ) );
-        /** Prepare URL for request based on method */
-        $url = untrailingslashit( $this->apiUrl ) . '/' . $this->apiController . '/' . $this->apiVersion . '/' . $name;
-        if( $method == 'GET' && !empty( $args ) ) {
-          $url .= '?' . http_build_query( $args );
+        if( $method == 'GET' ) {
+          $url .= '&' . http_build_query( $args );
         }
         /** Do request */
         $r = @wp_remote_request( $url, array_filter( array(
-          'method' => ( in_array( $method, array( 'GET', 'POST' ) ) ? $method : 'GET' ),
+          'method' => ( in_array( $method, array( 'GET', 'POST' ) ) ? $method : 'POST' ),
           'body' => ( $method == 'POST' ? $args : false ),
           // Prevent too long waiting on fron end
           'timeout' => ( is_admin() ? 15 : 5 ),
