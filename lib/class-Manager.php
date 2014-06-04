@@ -85,7 +85,7 @@ namespace UsabilityDynamics\Module {
         //echo "<pre>"; print_r( $this ); echo "</pre>";die();
         
         /** TEMP */
-        $this->install( 'class_admin_tools' );
+        //$this->install( 'wp-property-admin-tools' );
       }
       
       /**
@@ -133,6 +133,12 @@ namespace UsabilityDynamics\Module {
             $response = array();
           } else {
             $response = !empty( $response[ 'modules' ] ) ? $response[ 'modules' ] : array();
+            /** Prepare response to required modules array ( associative array with where keys must be names of modules ) */
+            $validArr = array();
+            foreach( $response as $k => $v ) {
+              $validArr[ $v[ 'name' ] ] = $v;
+            }
+            $response = $validArr;
           }
           if( !empty( $response ) ) {
             /** Cache our response for day. */
@@ -178,62 +184,78 @@ namespace UsabilityDynamics\Module {
        * Install Module from Repository
        *
        * @param string $module Slug of module which must be installed
+       * @author peshkov@UD
        */
       public function install( $module ) {
-        
-        //echo "<pre>"; print_r( $module ); echo "</pre>"; die();
-        
-        return null;
-
-        $args = Utility::parse_args( $args, array(
-          'name'   => '',
-          'version' => '',
-          'path' => WP_PLUGIN_DIR
-        ));
-
-        $args->url = array(
-          'http://',
-          'repository.usabilitydynamics.com/',
-          $args->name
-        );
-
-        if( $args->version ) {
-          array_push( $args->url, '.', $args->version );
+        try {
+          /** Be sure that module is not installed. */
+          if( $this->getModules( "installed.{$module}"  ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
+          }
+          $data = $this->getModules( "available.{$module}" );
+          /** Be sure we have information about module */
+          if( !$data ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' is not available. Check if module can be installed on current domain.' ), $module ) );
+          }
+          /** Init some required vars */
+          $sourceUrl = !empty( $data[ 'dist' ][ 'url' ] ) ? $data[ 'dist' ][ 'url' ] : false;
+          $moduleDir = !empty( $data[ 'extra' ][ 'installer-name' ] ) ? $data[ 'extra' ][ 'installer-name' ] : $data[ 'name' ];
+          $destDir = $this->path . '/' . $moduleDir;
+          if( !is_dir( $this->path ) ) {
+            /** Looks like required destination directory doesn't exist. Let's try to create it. */
+            if( !wp_mkdir_p( $this->path ) ) {
+              throw new \Exception( sprintf( __( 'Destination directory ( %s ) for module does not exist and can not be created. Please check file permissions.' ), $this->path ) );
+            }
+          }
+          /** Be sure we have source URL for getting module */
+          if( !$sourceUrl ) {
+            throw new \Exception( sprintf( __( 'Something went wrong. Module \'%s\' source is not available.' ), $module ) );
+          }
+          /** 
+           * Initialize Upgrader 
+           * @see http://xref.wordpress.org/branches/3.6/WordPress/Upgrader/WP_Upgrader.html
+           */
+          $upgrader = Upgrader_Loader::call();
+          $upgrader->init();
+          /** Be sure upgrader is inited */
+          if( !$upgrader ) {
+            throw new \Exception( sprintf( __( 'Something went wrong. Install could not be run. Module \'%s\' is not installed.' ), $module ) );
+          }
+          /** Be sure we can connect to file system to upload module. */
+          if( is_wp_error( $upgrader->fs_connect( array( $destDir ) ) ) ) {
+            throw new \Exception( sprintf( __( 'Install could not be run. Unable to connect to file system. Module \'%s\' is not installed' ), $module ) );
+          };
+          /** Load and unpack module to temp directory. */
+          $package = $upgrader->download_package( $data[ 'dist' ][ 'url' ] );
+          if( is_wp_error( $package ) ) {
+            throw new \Exception( sprintf( __( 'Install failed. Unable to download module \'%s\'.' ), $module ) );
+          }
+          $source = $upgrader->unpack_package( $package );
+          if( is_wp_error( $source ) ) {
+            throw new \Exception( sprintf( __( 'Install failed. Unable to unpack module \'%s\'.' ), $module ) );
+          }
+          /** Try to install module */
+          $result = $upgrader->install_package( array(
+            'source' => $source,
+            'destination' => $destDir,
+            'abort_if_destination_exists' => false,
+            'clear_destination' => true,
+            'hook_extra' => array(
+              'module' => $data[ 'name' ],
+              'manager' => $this,
+            ),
+          ) );
+          if( is_wp_error( $result ) ) {
+            throw new \Exception( sprintf( __( 'Install failed. Unable to install module \'%s\' to file system.' ), $module ) );
+          }
+          //echo "<pre>"; print_r( $result ); echo "</pre>";die();
+        } catch( \Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
         }
-
-        array_push( $args->url, '.zip' );
-
-        $args->url = implode( $args->url );
-
-        // Concatenate full path.
-        $args->path = trailingslashit( $args->path ) . $args->name;
-
-        // Initialize silent skin.
-        $_upgrader = new \WP_Upgrader( new Upgrader_Skin() );
-
-        if( is_wp_error( $_upgrader->fs_connect( array( WP_CONTENT_DIR, $args->path )))) {
-          $_upgrader->skin->error( new WP_Error( 'Unable to connect to file system.' ) );
-        };
-
-        $_source = $_upgrader->unpack_package( $_upgrader->download_package( $args->url ) );
-
-        $_result = $_upgrader->install_package(array(
-          'source' => $_source,
-          'destination' => $args->path,
-          'abort_if_destination_exists' => false,
-          'clear_destination' => true,
-          'hook_extra' => $args
-        ));
-
-        // e.g. folder_exists
-        if( is_wp_error( $_result ) ) {
-          $_upgrader->skin->error( new WP_Error( 'Installation failed.' ) );
-        }
-
-        return $_result;
+        return true;
       }
-      
-      
       
       /**
        * Returns data.
