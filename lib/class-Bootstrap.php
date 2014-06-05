@@ -29,7 +29,6 @@ namespace UsabilityDynamics\Module {
        * @author peshkov@UD
        */
       public function __construct( $args = array() ) {
-        
         $args = wp_parse_args( $args, array(
           // Required. API Key. It's related to current domain.
           'key' => false,
@@ -70,17 +69,17 @@ namespace UsabilityDynamics\Module {
         if( !empty( $args[ 'mode' ] ) ) {
           $this->_runMode( $args[ 'mode' ] );
         }
-        
-        //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
-        
       }
       
       /**
-       * Returns the list of installed modules
-       * 
+       * Returns the list of modules
+       * If key is passed, - returns modules data depending on key
+       *
+       * @param string $key
+       * @param mixed $default
        */
-      public function getModules() {
-        return $this->manager->getModules();
+      public function getModules( $key = false, $default = false ) {
+        return $this->manager->getModules( $key, $default );
       }
       
       /**
@@ -88,7 +87,6 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function activateModules( $args = array() ) {
-        
         
       }
       

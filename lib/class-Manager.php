@@ -45,15 +45,6 @@ namespace UsabilityDynamics\Module {
       private $path = null;
       
       /**
-       * The list of all available modules based on current system and api key
-       * @type array
-       */
-      private $modules = array(
-        'installed' => array(),
-        'available' => array(),
-      );
-      
-      /**
        * Use or not use transient memory
        * @type boolean
        */
@@ -66,6 +57,15 @@ namespace UsabilityDynamics\Module {
       private $apiUrl = 'http://api.ud-dev.com/';
       private $apiVersion = 'v2';
       private $apiController = 'modules';
+    
+      /**
+       * The list of all available modules based on current system and api key
+       * @type array
+       */
+      private $modules = array(
+        'installed' => array(),
+        'available' => array(),
+      );
     
       /**
        * Constructor
@@ -211,24 +211,36 @@ namespace UsabilityDynamics\Module {
        */
       private function _loadModules() {
         $modules = array();
-        if ( !empty( $this->path ) && is_dir( $this->path ) ) {
-          if ( $dh = opendir( $this->path ) ) {
-            while ( ( $dir = readdir( $dh ) ) !== false ) {
-              if( !in_array( $dir, array( '.', '..' ) ) && 
-                  is_dir( $this->path . '/' . $dir ) &&
-                  file_exists( $this->path . '/' . $dir . '/composer.json' )
-              ) {
-                $composer = @file_get_contents( $this->path . '/' . $dir . '/composer.json' );
-                $composer = @json_decode( $composer, true );
-                if( is_array( $composer ) && !empty( $composer[ 'name' ] ) ) {
-                  $modules[ $composer[ 'name' ] ] = array(
-                    'path' => $this->path . '/' . $dir,
-                    'data' => $composer,
-                  );
+        /** Maybe get cache */
+        if( $this->cache ) {
+          $modules = get_transient( 'ud:module:_loadModules' );
+        }
+        /** If there is no cache, parse modules directory. In other case, just return cache. */
+        if( !empty( $modules ) ) {
+          $modules = json_decode( $modules, true );
+        } else {
+          if ( !empty( $this->path ) && is_dir( $this->path ) ) {
+            if ( $dh = opendir( $this->path ) ) {
+              while ( ( $dir = readdir( $dh ) ) !== false ) {
+                if( !in_array( $dir, array( '.', '..' ) ) && 
+                    is_dir( $this->path . '/' . $dir ) &&
+                    file_exists( $this->path . '/' . $dir . '/composer.json' )
+                ) {
+                  $composer = @file_get_contents( $this->path . '/' . $dir . '/composer.json' );
+                  $composer = @json_decode( $composer, true );
+                  if( is_array( $composer ) && !empty( $composer[ 'name' ] ) ) {
+                    $modules[ $composer[ 'name' ] ] = wp_parse_args( $this->_prepareModuleData( $composer ), array( 
+                      'path' => $this->path . '/' . $dir,
+                    ) );
+                  }
                 }
               }
+              closedir( $dh );
             }
-            closedir( $dh );
+          }
+          if( !empty( $modules ) ) {
+            /** Cache our result for day. */
+            set_transient( 'ud:module:_loadModules', json_encode( $modules ), ( 60 * 60 * 24 ) );
           }
         }
         return $modules;
@@ -242,7 +254,7 @@ namespace UsabilityDynamics\Module {
         $response = array();
         /** Maybe get cache */
         if( $this->cache ) {
-          $response = get_transient( 'ud:module:loadout' );
+          $response = get_transient( 'ud:module:_moduleLoadout' );
         }
         /** If there is no cache, do request to server. In other case, just return cache. */
         if( !empty( $response ) ) {
@@ -258,16 +270,20 @@ namespace UsabilityDynamics\Module {
             $response = array();
           } else {
             $response = !empty( $response[ 'modules' ] ) ? $response[ 'modules' ] : array();
-            /** Prepare response to required modules array ( associative array with where keys must be names of modules ) */
+            /** Prepare response to required modules array */
             $validArr = array();
             foreach( $response as $k => $v ) {
-              $validArr[ $v[ 'name' ] ] = $v;
+              if( is_array( $v ) && !empty( $v[ 'name' ] ) ) {
+                $validArr[ $v[ 'name' ] ] = wp_parse_args( $this->_prepareModuleData( $v ), array( 
+                  'path' => isset( $v[ 'dist' ][ 'url' ] ) ? $v[ 'dist' ][ 'url' ] : false,
+                ) );
+              }
             }
             $response = $validArr;
           }
           if( !empty( $response ) ) {
             /** Cache our response for day. */
-            set_transient( 'ud:module:loadout', json_encode( $response ), ( 60 * 60 * 24 ) );
+            set_transient( 'ud:module:_moduleLoadout', json_encode( $response ), ( 60 * 60 * 24 ) );
           }
         }
         return $response;
@@ -313,6 +329,60 @@ namespace UsabilityDynamics\Module {
           $p = strtok( '.' );
         }
         return $current;
+      }
+      
+      /**
+       * Prepares Module data
+       * so installed and available modules have the same structure (schema) 
+       *
+       * @param array $data Schema ( composer.json and loadout response must have almost same structure )
+       */
+      private function _prepareModuleData( $data ) {
+        /** Try to get Title locale */
+        $title = isset(  $data[ 'extra' ][ 'title' ][ get_locale() ] ) ? $data[ 'extra' ][ 'title' ][ get_locale() ] : '';
+        if( empty( $title ) ) {
+          $title = isset(  $data[ 'extra' ][ 'title' ][ 'en_US' ] ) ? 
+            $data[ 'extra' ][ 'title' ][ 'en_US' ] : ( isset(  $data[ 'extra' ][ 'title' ] ) && is_string( $data[ 'extra' ][ 'title' ] ) ?
+              $data[ 'extra' ][ 'title' ] : '' );
+        }
+        /** Try to get Tagline locale */
+        $tagline = isset(  $data[ 'extra' ][ 'tagline' ][ get_locale() ] ) ? $data[ 'extra' ][ 'tagline' ][ get_locale() ] : '';
+        if( empty( $tagline ) ) {
+          $tagline = isset(  $data[ 'extra' ][ 'tagline' ][ 'en_US' ] ) ? 
+            $data[ 'extra' ][ 'tagline' ][ 'en_US' ] : ( isset(  $data[ 'extra' ][ 'tagline' ] ) && is_string( $data[ 'extra' ][ 'tagline' ] ) ?
+              $data[ 'extra' ][ 'tagline' ] : '' );
+        }
+        /** Try to get Description locale */
+        $description = isset(  $data[ 'extra' ][ 'description' ][ get_locale() ] ) ? $data[ 'extra' ][ 'description' ][ get_locale() ] : '';
+        if( empty( $description ) ) {
+          $description = isset(  $data[ 'extra' ][ 'description' ][ 'en_US' ] ) ? 
+            $data[ 'extra' ][ 'description' ][ 'en_US' ] : ( isset(  $data[ 'extra' ][ 'description' ] ) && is_string( $data[ 'extra' ][ 'description' ] ) ?
+              $data[ 'extra' ][ 'description' ] : '' );
+        }
+        $module = array(
+          'data' => array(
+            // Unique Name
+            'name' => $data[ 'name' ],
+            // Current version
+            'version' => isset( $data[ 'version' ] ) ? $data[ 'version' ] : false,
+            // Title based on localization
+            'title' => !empty( $title ) ? $title : $data[ 'name' ],
+            // Tagline based on localization
+            'tagline' => $tagline,
+            // Description based on localization
+            'description' => $description,
+            // Logo Image
+            'image' => isset( $data[ 'extra' ][ 'image' ] ) ? $data[ 'extra' ][ 'image' ] : false,
+            // Minimum PHP version
+            'minimum_php' => isset( $data[ 'extra' ][ 'minimum_php' ] ) ? $data[ 'extra' ][ 'minimum_php' ] : false,
+            // Minimum current system's core version
+            'minimum_core' => isset( $data[ 'extra' ][ 'minimum_core' ][ $this->system ] ) ? $data[ 'extra' ][ 'minimum_core' ][ $this->system ] : false,
+            // File which loads ( inits ) module
+            'loader' => isset( $data[ 'extra' ][ 'loader' ] ) ? $data[ 'extra' ][ 'loader' ] : false,
+          ),               
+          'system' => $data,
+        );
+        return $module;
       }
       
       /**
