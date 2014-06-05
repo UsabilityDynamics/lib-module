@@ -130,7 +130,12 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function enableModule( $module ) {
-        
+        $optName = 'ud:module:' . $this->system . ':enabled';
+        $data = get_option( $optName, array() );
+        if( !in_array( $module, $data ) ) {
+          array_push( $data, $module );
+        }
+        return update_option( $optName, $data );
       }
       
       /**
@@ -138,7 +143,16 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function disableModule( $module ) {
-        
+        $optName = 'ud:module:' . $this->system . ':enabled';
+        $data = get_option( $optName, array() );
+        if( in_array( $module, $data ) ) {
+          foreach( $data as $i => $_module ) {
+            if( $module = $_module ) {
+              unset( $data[ $i ] );
+            }
+          }
+        }
+        return update_option( $optName, $data );
       }
       
       /**

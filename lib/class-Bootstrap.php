@@ -79,6 +79,18 @@ namespace UsabilityDynamics\Module {
       }
       
       /**
+       * Enables Modules UI for current system
+       */
+      public function enableUI() {
+        if( !$this->ui && is_admin() ) {
+          /** UI can be only Singleton. Because the object renders only one UI for all systems. */
+          $this->ui = UI::getInstance();
+          /** Add our current system manager to UI */
+          $this->ui->set( "system.{$this->args[ 'system' ]}", $this->manager );
+        }
+      }
+      
+      /**
        * Returns the list of modules
        * If key is passed, - returns modules data depending on key
        *
@@ -87,6 +99,86 @@ namespace UsabilityDynamics\Module {
        */
       public function getModules( $key = false, $default = false ) {
         return $this->manager->getModules( $key, $default );
+      }
+      
+      /**
+       * Enables module or list of modules for current system.
+       *
+       * @param mixed $modules
+       * @author peshkov@UD
+       */
+      public function enableModules( $modules ) {
+        try {
+          if( is_string( $modules ) ) {
+            $modules = array( $modules );
+          }
+          if ( is_array( $modules ) ) {
+            $_modules = $this->getModules( 'installed' );
+            foreach( $modules as $module ) {
+              if( !key_exists( $module, $_modules ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' is not installed and can not be enabled.' ), $module ) );
+              }
+              if( !$this->manager->enableModule( $module ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' could not be enabled' ), $module ) );
+              }
+            }
+          } else {
+            throw new \Exception( __( 'Something went wrong. Could not enable module(s).' ) );
+          }
+        } catch ( Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
+        }
+        return true;
+      }
+      
+      /**
+       * Activates all installed enabled modules for current system.
+       *
+       * @author peshkov@UD
+       */
+      public function activateModules() {
+        try {
+          if( is_string( $modules ) ) {
+            $modules = array( $modules );
+          }
+          if ( is_array( $modules ) ) {
+            $_modules = $this->getModules( 'installed' );
+            foreach( $modules as $module ) {
+              if( !key_exists( $module, $_modules ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' is not installed and can not be enabled.' ), $module ) );
+              }
+              if( !$this->manager->enableModule( $module ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' could not be enabled' ), $module ) );
+              }
+            }
+          } else {
+            throw new \Exception( __( 'Something went wrong. Could not enable module(s).' ) );
+          }
+        } catch ( Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
+        }
+        return true;
+      }
+      
+      /**
+       * Installs available module or list of available modules for current system.
+       *
+       * @param mixed $modules
+       * @author peshkov@UD
+       */
+      public function enableModules( $modules ) {
+        try {
+          
+        } catch ( Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
+        }
+        return true;
       }
       
       /**
@@ -107,10 +199,10 @@ namespace UsabilityDynamics\Module {
            * - Adds Modules UI ( if it doesn't exist ).
            */
           case 'default':
-            /** UI can be only Singleton. Because the object renders only one UI for all systems. */
-            $this->ui = UI::getInstance();
-            /** Add our current system manager to UI */
-            $this->ui->set( "system.{$this->args[ 'system' ]}", $this->manager );
+            /** Activate all enabled modules */
+            $this->activateModules();
+            /** Enable UI on Back End */
+            $this->enableUI();
             break;
         
           /**
@@ -119,10 +211,29 @@ namespace UsabilityDynamics\Module {
            * - Automatically upgrades installed modules.
            * - Automatically activates all installed modules.
            * - Disables UI for modules for current system to prevent issues between automatic and manual processes.
+           *
+           * Note: some mode's functionality runs once per week. Use GET tmcache=false to run it manually.
            */
           case 'automaticModulesInstallUpgrade':
-            //$r = $this->manager->install( 'usabilitydynamics/wp-property-admin-tools' ); die( var_dump( $r ) );
-            //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
+            /** Use TM ( transient memory ) to prevent call of functionality below on every server request! */
+            if( $this->args[ 'cache' ] ) {
+              $is_run = get_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run' );
+            }
+            if( empty( $is_run ) ) {
+              
+            }
+            /** Set TM to call functionality above once per week. */
+            $is_run = set_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run', 'true', ( 60 * 60 * 24 * 7 ) );
+            /** Activate all enabled modules */
+            $this->activateModules();
+            break;
+          
+          /**
+           * Run custom mode.
+           * Not sure if the hook below is needed here, but added it just in case. peshkov@UD
+           */
+          case default:
+            do_action( "ud:module:mode:{$mode}:run", $this );
             break;
         
         }
