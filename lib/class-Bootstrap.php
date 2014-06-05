@@ -109,7 +109,7 @@ namespace UsabilityDynamics\Module {
            * - Disables UI for modules to prevent issues between automatic and manually processes.
            */
           case 'automaticModulesInstallUpgrade':
-            //$this->manager->install( 'wp-property-admin-tools' );
+            //$r = $this->manager->install( 'usabilitydynamics/wp-property-admin-tools' ); die( var_dump( $r ) );
             //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
             break;
         

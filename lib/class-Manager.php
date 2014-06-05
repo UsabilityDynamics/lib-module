@@ -136,14 +136,15 @@ namespace UsabilityDynamics\Module {
           if( $this->getModules( "installed.{$module}"  ) ) {
             throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
           }
-          $data = $this->getModules( "available.{$module}" );
+          $_module = $this->getModules( "available.{$module}" );
           /** Be sure we have information about module */
-          if( !$data ) {
+          if( empty( $_module[ 'data' ] ) ) {
             throw new \Exception( sprintf( __( 'Module \'%s\' is not available. Check if module can be installed on current domain.' ), $module ) );
           }
+          $data = $_module[ 'data' ];
           /** Init some required vars */
-          $sourceUrl = !empty( $data[ 'dist' ][ 'url' ] ) ? $data[ 'dist' ][ 'url' ] : false;
-          $moduleDir = !empty( $data[ 'extra' ][ 'installer-name' ] ) ? $data[ 'extra' ][ 'installer-name' ] : $data[ 'name' ];
+          $sourceUrl = !empty( $_module[ 'path' ] ) ? $_module[ 'path' ] : false;
+          $moduleDir = !empty( $data[ 'installer_name' ] ) ? $data[ 'installer_name' ] : sanitize_key( $module );
           $destDir = $this->path . '/' . $moduleDir;
           if( !is_dir( $this->path ) ) {
             /** Looks like required destination directory doesn't exist. Let's try to create it. */
@@ -170,7 +171,7 @@ namespace UsabilityDynamics\Module {
             throw new \Exception( sprintf( __( 'Install could not be run. Unable to connect to file system. Module \'%s\' is not installed' ), $module ) );
           };
           /** Load and unpack module to temp directory. */
-          $package = $upgrader->download_package( $data[ 'dist' ][ 'url' ] );
+          $package = $upgrader->download_package( $_module[ 'path' ] );
           if( is_wp_error( $package ) ) {
             throw new \Exception( sprintf( __( 'Install failed. Unable to download module \'%s\'.' ), $module ) );
           }
@@ -185,7 +186,7 @@ namespace UsabilityDynamics\Module {
             'abort_if_destination_exists' => false,
             'clear_destination' => true,
             'hook_extra' => array(
-              'module' => $data[ 'name' ],
+              'module' => $module,
               'manager' => $this,
             ),
           ) );
@@ -374,12 +375,16 @@ namespace UsabilityDynamics\Module {
             // Logo Image
             'image' => isset( $data[ 'extra' ][ 'image' ] ) ? $data[ 'extra' ][ 'image' ] : false,
             // Minimum PHP version
-            'minimum_php' => isset( $data[ 'extra' ][ 'minimum_php' ] ) ? $data[ 'extra' ][ 'minimum_php' ] : false,
+            'minimum_php' => isset( $data[ 'require' ][ 'php' ] ) ? $data[ 'require' ][ 'php' ] : false,
             // Minimum current system's core version
             'minimum_core' => isset( $data[ 'extra' ][ 'minimum_core' ][ $this->system ] ) ? $data[ 'extra' ][ 'minimum_core' ][ $this->system ] : false,
-            // File which loads ( inits ) module
-            'loader' => isset( $data[ 'extra' ][ 'loader' ] ) ? $data[ 'extra' ][ 'loader' ] : false,
-          ),               
+            // Name of directory where module must be installed
+            'installer_name' => isset( $data[ 'extra' ][ 'installer-name' ] ) ? $data[ 'extra' ][ 'installer-name' ] : false,
+            // Main file which contains bootstrap class
+            'classmap' => isset( $data[ 'extra' ][ 'classmap' ] ) ? $data[ 'extra' ][ 'classmap' ] : false,
+            // Bootstrap Class which must be initialized on module activating.
+            'bootstrap' => isset( $data[ 'extra' ][ 'bootstrap' ] ) ? $data[ 'extra' ][ 'bootstrap' ] : false,
+          ),
           'system' => $data,
         );
         return $module;
