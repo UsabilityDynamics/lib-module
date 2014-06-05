@@ -103,6 +103,7 @@ namespace UsabilityDynamics\Module {
       
       /**
        * Enables module or list of modules for current system.
+       * Bulk process
        *
        * @param mixed $modules
        * @author peshkov@UD
@@ -134,51 +135,46 @@ namespace UsabilityDynamics\Module {
       }
       
       /**
-       * Activates all installed enabled modules for current system.
+       * Disables module or list of modules for current system.
+       * Bulk process
+       *
+       * @param mixed $modules
+       * @author peshkov@UD
+       */
+      public function disableModules( $modules ) {
+        try {
+          if( is_string( $modules ) ) {
+            $modules = array( $modules );
+          }
+          if ( is_array( $modules ) ) {
+            $_modules = $this->getModules( 'installed' );
+            foreach( $modules as $module ) {
+              if( !key_exists( $module, $_modules ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' is not installed and can not be disabled as well.' ), $module ) );
+              }
+              if( !$this->manager->disableModule( $module ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' could not be disabled' ), $module ) );
+              }
+            }
+          } else {
+            throw new \Exception( __( 'Something went wrong. Could not disable module(s).' ) );
+          }
+        } catch ( Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
+        }
+        return true;
+      }
+      
+      /**
+       * Activates (instantiate) all installed enabled modules for current system.
+       * Bulk Process
        *
        * @author peshkov@UD
        */
       public function activateModules() {
-        try {
-          if( is_string( $modules ) ) {
-            $modules = array( $modules );
-          }
-          if ( is_array( $modules ) ) {
-            $_modules = $this->getModules( 'installed' );
-            foreach( $modules as $module ) {
-              if( !key_exists( $module, $_modules ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' is not installed and can not be enabled.' ), $module ) );
-              }
-              if( !$this->manager->enableModule( $module ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' could not be enabled' ), $module ) );
-              }
-            }
-          } else {
-            throw new \Exception( __( 'Something went wrong. Could not enable module(s).' ) );
-          }
-        } catch ( Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-          return false;
-        }
-        return true;
-      }
-      
-      /**
-       * Installs available module or list of available modules for current system.
-       *
-       * @param mixed $modules
-       * @author peshkov@UD
-       */
-      public function enableModules( $modules ) {
-        try {
-          
-        } catch ( Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-          return false;
-        }
-        return true;
+        return $this->manager->activateModules();
       }
       
       /**
@@ -217,13 +213,14 @@ namespace UsabilityDynamics\Module {
           case 'automaticModulesInstallUpgrade':
             /** Use TM ( transient memory ) to prevent call of functionality below on every server request! */
             if( $this->args[ 'cache' ] ) {
-              $is_run = get_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run' );
+              $transient = get_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run' );
             }
-            if( empty( $is_run ) ) {
-              
+            if( empty( $transient ) ) {
+              /** Enable All Installed Modules */
+              $this->enableModules( array_keys( $this->getModules( 'installed' ) ) );
             }
             /** Set TM to call functionality above once per week. */
-            $is_run = set_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run', 'true', ( 60 * 60 * 24 * 7 ) );
+            set_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run', 'true', ( 60 * 60 * 24 * 7 ) );
             /** Activate all enabled modules */
             $this->activateModules();
             break;

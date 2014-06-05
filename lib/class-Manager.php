@@ -65,6 +65,7 @@ namespace UsabilityDynamics\Module {
       private $modules = array(
         'installed' => array(),
         'available' => array(),
+        'activated' => array(),
       );
     
       /**
@@ -109,19 +110,61 @@ namespace UsabilityDynamics\Module {
       }
       
       /**
-       * Validate a specific module - make sure it can be enabled, etc
+       * Validates a specific module - make sure it can be enabled.
        *
        */
-      public function validateModule() {
-        
+      public function validateModule( $module ) {
+        return true;
       }
       
       /**
-       * Activate (instantiate) loaded modules
+       * Activate (instantiate) loaded enabled modules
+       * 
+       * Does the following:
+       * - validate modules
+       * - disable modules on validation failed
+       * - activates modules on validation success       
        *
+       * @author peshkov@UD
        */
       public function activateModules() {
-        
+        try {
+          $enabledModules = get_option( 'ud:module:' . $this->system . ':enabled' );
+          foreach( $this->getModules( 'installed' ) as $name => $module ) {
+            /** Determine if module is enabled */
+            if( !in_array( $name, $enabledModules ) ) {
+              continue;
+            }
+            /** Validate module */
+            if( !$this->validateModule( $name ) ) {
+              $this->disableModule( $name );
+              continue;
+            }
+            /** Now try to activate and init module */
+            if( empty( $module[ 'classmap' ] ) ) {
+              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Missed classmap parameter.' ), $module[ 'name' ] ) );
+            }
+            $classFile = $module[ 'path' ] . '/' ltrim( $module[ 'classmap' ], '/' );
+            if( !file_exists( $classFile ) ) {
+              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap file does not exist.' ), $module[ 'name' ] ) );
+            }
+            /** Determine if class exists and include it if it does not. */
+            if( !class_exists( $module[ 'bootstrap' ] ) ) {
+              include_once( $classFile );
+              if( !class_exists( $module[ 'bootstrap' ] ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap class does not exist.' ), $module[ 'name' ] ) );
+              }
+            }
+            /** Activate module and add it to the list of activated modules. */
+            new $module[ 'bootstrap' ];
+            array_push( $this->modules[ 'activated' ], $name );
+          }
+        } catch( \Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
+        }
+        return true;
       }
       
       
