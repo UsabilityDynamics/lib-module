@@ -15,7 +15,7 @@ namespace UsabilityDynamics\Module {
      */
     class Bootstrap {
       
-      private $args = 
+      private $args = null;
       
       /**
        * Manager
@@ -89,23 +89,28 @@ namespace UsabilityDynamics\Module {
           $this->ui->set( "system.{$this->args[ 'system' ]}", $this->manager );
         }
       }
-      
+
       /**
        * Returns the list of modules
        * If key is passed, - returns modules data depending on key
        *
-       * @param string $key
-       * @param mixed $default
+       * @param bool|string $key
+       * @param mixed       $default
+       *
+       * @return array|bool|null
        */
       public function getModules( $key = false, $default = false ) {
         return $this->manager->getModules( $key, $default );
       }
-      
+
       /**
        * Enables module or list of modules for current system.
        * Bulk process
        *
        * @param mixed $modules
+       *
+       * @throws \Exception
+       * @return bool
        * @author peshkov@UD
        */
       public function enableModules( $modules ) {
@@ -133,12 +138,15 @@ namespace UsabilityDynamics\Module {
         }
         return true;
       }
-      
+
       /**
        * Disables module or list of modules for current system.
        * Bulk process
        *
        * @param mixed $modules
+       *
+       * @throws \Exception
+       * @return bool
        * @author peshkov@UD
        */
       public function disableModules( $modules ) {
@@ -176,12 +184,13 @@ namespace UsabilityDynamics\Module {
       public function activateModules() {
         return $this->manager->activateModules();
       }
-      
+
       /**
        * Handles some actions
        * Adds automatic processes for different cases ( modes )
        *
-       * @param string $mode Mode ( handler ).
+       * @param bool|string $mode Mode ( handler ).
+       *
        * @author peshkov@UD
        */
       private function _runMode( $mode = false ) {
@@ -229,7 +238,7 @@ namespace UsabilityDynamics\Module {
            * Run custom mode.
            * Not sure if the hook below is needed here, but added it just in case. peshkov@UD
            */
-          case default:
+          default:
             do_action( "ud:module:mode:{$mode}:run", $this );
             break;
         
