@@ -1,7 +1,7 @@
 <?php
 /**
  * Handles Module's management functionality and UI
- * 
+ * Note: it also is used as API.
  */
 namespace UsabilityDynamics\Module {
 
@@ -15,13 +15,22 @@ namespace UsabilityDynamics\Module {
      */
     class Bootstrap {
       
+      private $args = 
+      
       /**
        * Manager
        *
        * @type object UsabilityDynamics\Module\Manager
        */
       private $manager = null;
-    
+      
+      /**
+       * UI
+       *
+       * @type object UsabilityDynamics\Module\UI
+       */
+      private $ui = null;
+      
       /**
        * Constructor
        *
@@ -29,7 +38,7 @@ namespace UsabilityDynamics\Module {
        * @author peshkov@UD
        */
       public function __construct( $args = array() ) {
-        $args = wp_parse_args( $args, array(
+        $this->args = wp_parse_args( $args, array(
           // Required. API Key. It's related to current domain.
           'key' => false,
           // Required. Plugin's slug. Determines which modules can be installed for current plugin.
@@ -40,35 +49,33 @@ namespace UsabilityDynamics\Module {
           'path' => null,
           // Optional. Use or not use transient memory. 
           'cache' => true,
-          // Optional. Mode Handler is used to do some processes automatic. 
+          // Optional. Mode Handler can be used to do some processes automatic. 
           // see self::_runMode()
-          'mode' => false,
+          'mode' => 'default',
         ) );
         
         /** 
          * In some cases, transient memory must not be used ( set '?tmcache=false' to disable cache  ).
          * ( e.g., need to get the latest information about available modules and their versions ).
          */
-        $args[ 'cache' ] = ( isset( $_REQUEST[ 'tmcache' ] ) && $_REQUEST[ 'tmcache' ] == 'false' ) ? false : $args[ 'cache' ];
+        $this->args[ 'cache' ] = ( isset( $_REQUEST[ 'tmcache' ] ) && $_REQUEST[ 'tmcache' ] == 'false' ) ? false : $this->args[ 'cache' ];
         
         /** Determine if global Modules DIR ( UD_MODULES_DIR ) is defined. */
-        $args[ 'path' ] = untrailingslashit( wp_normalize_path( defined( 'UD_MODULES_DIR' ) ? UD_MODULES_DIR : $args[ 'path' ] ) );
+        $this->args[ 'path' ] = untrailingslashit( wp_normalize_path( defined( 'UD_MODULES_DIR' ) ? UD_MODULES_DIR : $this->args[ 'path' ] ) );
         /** 
          * To prevent the issues with different systems ( plugins ) 
          * which use modules we're installing all modules to 'system' dir
          * when UD_MODULES_DIR is defined.
          */
-        if( defined( 'UD_MODULES_DIR' ) && !empty( $args[ 'system' ] ) ) {
-          $args[ 'path' ] .= '/' . $args[ 'system' ];
+        if( defined( 'UD_MODULES_DIR' ) && !empty( $this->args[ 'system' ] ) ) {
+          $this->args[ 'path' ] .= '/' . $this->args[ 'system' ];
         }
         
         /** Init our Manager */
-        $this->manager = new Manager( $args );
+        $this->manager = new Manager( $this->args );
         
-        /** Runs mode handler if mode is set. */
-        if( !empty( $args[ 'mode' ] ) ) {
-          $this->_runMode( $args[ 'mode' ] );
-        }
+        /** Runs mode handler. */
+        $this->_runMode();
       }
       
       /**
@@ -83,14 +90,6 @@ namespace UsabilityDynamics\Module {
       }
       
       /**
-       * Activates available modules
-       *
-       */
-      public function activateModules( $args = array() ) {
-        
-      }
-      
-      /**
        * Handles some actions
        * Adds automatic processes for different cases ( modes )
        *
@@ -102,11 +101,24 @@ namespace UsabilityDynamics\Module {
         switch( $mode ) {
         
           /**
+           * Default Mode.
+           * 
+           * Does the following:
+           * - Adds Modules UI ( if it doesn't exist ).
+           */
+          case 'default':
+            /** UI can be only Singleton. Because the object renders only one UI for all systems. */
+            $this->ui = UI::getInstance();
+            /** Add our current system manager to UI */
+            $this->ui->set( "system.{$this->args[ 'system' ]}", $this->manager );
+            break;
+        
+          /**
            * Does the following:
            * - Automatically installs available modules.
            * - Automatically upgrades installed modules.
            * - Automatically activates all installed modules.
-           * - Disables UI for modules to prevent issues between automatic and manually processes.
+           * - Disables UI for modules for current system to prevent issues between automatic and manual processes.
            */
           case 'automaticModulesInstallUpgrade':
             //$r = $this->manager->install( 'usabilitydynamics/wp-property-admin-tools' ); die( var_dump( $r ) );

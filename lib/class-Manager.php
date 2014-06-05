@@ -120,7 +120,24 @@ namespace UsabilityDynamics\Module {
        * Activate (instantiate) loaded modules
        *
        */
-      public function enableModules() {
+      public function activateModules() {
+        
+      }
+      
+      
+      /**
+       * Enable module
+       *
+       */
+      public function enableModule( $module ) {
+        
+      }
+      
+      /**
+       * Disable module
+       *
+       */
+      public function disableModule( $module ) {
         
       }
       
