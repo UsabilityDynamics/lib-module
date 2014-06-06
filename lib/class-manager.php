@@ -54,6 +54,16 @@ namespace UsabilityDynamics\Module {
        * @type boolean
        */
       private $cache = false;
+      
+      /**
+       * All transient keys
+       *
+       * @type array
+       */
+      private $transients = array(
+        'ud:module:_getInstalledModules',
+        'ud:module:_getAvailableModules',
+      );
 
       /**
        * API properties
@@ -88,8 +98,17 @@ namespace UsabilityDynamics\Module {
         $this->cache   = isset( $args[ 'cache' ] ) ? $args[ 'cache' ] : $this->cache;
 
         /** Set the list of available and installed modules */
-        $this->modules[ 'installed' ] = $this->_loadModules();
-        $this->modules[ 'available' ] = $this->_moduleLoadout();
+        $this->modules[ 'installed' ] = $this->_getInstalledModules();
+        $this->modules[ 'available' ] = $this->_getAvailableModules();
+        
+        /** Maybe Add specific transients to transients list. Needed for resetTransient() functionality. */
+        foreach( $this->modules[ 'installed' ] as $k => $m ) {
+          $this->addTransient( "ud:module:validateModule:" . sanitize_key( $k ) );
+        }
+        foreach( $this->modules[ 'available' ] as $k => $m ) {
+          $this->addTransient( "ud:module:validateModule:" . sanitize_key( $k ) );
+        }
+        //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
       }
 
       /**
@@ -99,13 +118,61 @@ namespace UsabilityDynamics\Module {
       public function getModules( $key = false, $default = false ) {
         return $this->_getData( $this->modules, $key, $default );
       }
+      
+      /**
+       * Adds Transient to list
+       *
+       * @param string $transient
+       * @author peshkov@UD
+       */
+      public function addTransient( $transient ) {
+        if( !in_array( $transient, $this->transients ) ) {
+          $this->transients[] = $transient;
+        }
+      }
+      
+      /**
+       * Resets Transient Cache
+       *
+       * @param bool | string $transient
+       * @author peshkov@UD
+       */
+      public function resetTransient( $transient = false ) {
+        if( !empty( $transient ) && isset( $this->transients[ $transient ] ) ) {
+          delete_transient( $this->transients[ $transient ] );
+        } else {
+          foreach( $this->transients as $t ) {
+            delete_transient( $t );
+          }
+        }
+      }
 
       /**
        * Validates a specific module - make sure it can be enabled.
        *
        */
       public function validateModule( $module ) {
-        return true;
+        $is_valid = false;
+        /** Maybe get cache */
+        if( $this->cache ) {
+          $cache = get_transient( "ud:module:validateModule:" . sanitize_key( $module ) );
+        }
+        /** If there is no cache, Do request to UD server. */
+        if( !empty( $cache ) ) {
+          $is_valid = $cache;
+        } else {
+          /** Do request to UD */
+          $response = $this->_doRequest( 'validate', array(
+            'module' => $module,
+          ) );
+          /** Determine if request was successful */
+          if( isset( $response[ 'ok' ] ) || $response[ 'ok' ] == true ) {
+            $is_valid = isset( $response[ 'is_valid' ] ) ? $response[ 'is_valid' ] : false;
+          }
+          /** Cache our result per day. */
+          set_transient( "ud:module:validateModule:" . sanitize_key( $module ), $is_valid, ( 60 * 60 * 24 ) );
+        }
+        return $is_valid;
       }
 
       /**
@@ -214,10 +281,14 @@ namespace UsabilityDynamics\Module {
         if( version_compare( $_module[ 'data' ][ 'version' ], $this->getModules( "available.{$module}.data.version" ) ) >= 0 ) {
           throw new \Exception( sprintf( __( 'The current Module \'%s\' version is the latest.' ), $module ) );
         }
-        return $this->loadModule( $module, array(
+        $r = $this->loadModule( $module, array(
           'abort_if_destination_exists' => false,
           'clear_destination'           => true,
         ) );
+        if( $r ) {
+          $this->resetTransient();
+        }
+        return $r;
       }
       
       /**
@@ -229,10 +300,14 @@ namespace UsabilityDynamics\Module {
         if( $this->getModules( "installed.{$module}" ) ) {
           throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
         }
-        return $this->loadModule( $module, array(
+        $r = $this->loadModule( $module, array(
           'abort_if_destination_exists' => true,
           'clear_destination'           => false,
         ) );
+        if( $r ) {
+          $this->resetTransient();
+        }
+        return $r;
       }
       
       /**
@@ -326,11 +401,11 @@ namespace UsabilityDynamics\Module {
        *
        * @author peshkov@UD
        */
-      private function _loadModules() {
+      private function _getInstalledModules() {
         $modules = array();
         /** Maybe get cache */
         if( $this->cache ) {
-          $modules = get_transient( 'ud:module:_loadModules' );
+          $modules = get_transient( 'ud:module:_getInstalledModules' );
         }
         /** If there is no cache, parse modules directory. In other case, just return cache. */
         if( !empty( $modules ) ) {
@@ -356,8 +431,9 @@ namespace UsabilityDynamics\Module {
             }
           }
           if( !empty( $modules ) ) {
+            $this->resetTransient();
             /** Cache our result for day. */
-            set_transient( 'ud:module:_loadModules', json_encode( $modules ), ( 60 * 60 * 24 ) );
+            set_transient( 'ud:module:_getInstalledModules', json_encode( $modules ), ( 60 * 60 * 24 ) );
           }
         }
 
@@ -365,14 +441,15 @@ namespace UsabilityDynamics\Module {
       }
 
       /**
+       * Returns the list of available Modules
        * Makes API call to UD to get list of modules that current system can support.
        *
        */
-      private function _moduleLoadout() {
+      private function _getAvailableModules() {
         $response = array();
         /** Maybe get cache */
         if( $this->cache ) {
-          $response = get_transient( 'ud:module:_moduleLoadout' );
+          $response = get_transient( 'ud:module:_getAvailableModules' );
         }
         /** If there is no cache, do request to server. In other case, just return cache. */
         if( !empty( $response ) ) {
@@ -403,8 +480,9 @@ namespace UsabilityDynamics\Module {
             $response = $validArr;
           }
           if( !empty( $response ) ) {
-            /** Cache our response for day. */
-            set_transient( 'ud:module:_moduleLoadout', json_encode( $response ), ( 60 * 60 * 24 ) );
+            $this->resetTransient();
+            /** Cache our response per day. */
+            set_transient( 'ud:module:_getAvailableModules', json_encode( $response ), ( 60 * 60 * 24 ) );
           }
         }
 
@@ -551,7 +629,6 @@ namespace UsabilityDynamics\Module {
         if( !empty( $r[ 'response' ][ 'code' ] ) && $r[ 'response' ][ 'code' ] == 200 ) {
           $response = !empty( $r[ 'body' ] ) ? @json_decode( $r[ 'body' ], true ) : false;
         }
-
         //echo "<pre>"; print_r( $response ); echo "</pre>"; die();
         return $response;
       }

@@ -15,6 +15,11 @@ namespace UsabilityDynamics\Module {
      */
     class Bootstrap {
       
+      /**
+       * Constructor Arguments
+       *
+       * @type array
+       */
       private $args = null;
       
       /**
@@ -264,7 +269,7 @@ namespace UsabilityDynamics\Module {
             }
             if( empty( $transient ) ) {
               /** Maybe Install/Upgrade all Modules */
-              $this->loadModules( array_keys( $this->getModules( 'available' ) ) );
+              //$this->loadModules( array_keys( $this->getModules( 'available' ) ) );
               /** Maybe Enable All Installed Modules */
               $this->enableModules( array_keys( $this->getModules( 'installed' ) ) );
             }
