@@ -150,7 +150,7 @@ namespace UsabilityDynamics\Module {
             /** Maybe check required minimum PHP version */
             if( !empty( $module[ 'data' ][ 'minimum_php' ] ) ) {
               $requiredPhpVersion = floatval( preg_replace( "/[^-0-9\.]/", "", $module[ 'data' ][ 'minimum_php' ] ) );
-              $operator = preg_replace( "/[^><=]/", "", $module[ 'data' ][ 'minimum_php' ] ) );
+              $operator = preg_replace( "/[^><=]/", "", $module[ 'data' ][ 'minimum_php' ] );
               if( empty( $operator ) ) {
                 $operator = '>=';
               }
@@ -179,12 +179,11 @@ namespace UsabilityDynamics\Module {
             new $module[ 'data' ][ 'bootstrap' ];
             array_push( $this->modules[ 'activated' ], $name );
           }
-        } catch( \Exception $e ) {
+        } catch ( \Exception $e ) {
           /** @todo: add error handler instead of wp_die!!! */
           wp_die( $e->getMessage() );
           return false;
         }
-
         return true;
       }
 
@@ -195,11 +194,12 @@ namespace UsabilityDynamics\Module {
       public function enableModule( $module ) {
         $optName = 'ud:module:' . $this->system . ':enabled';
         $data    = get_option( $optName, array() );
+        $data = is_array( $data ) ? $data : array();
         if( !in_array( $module, $data ) ) {
           array_push( $data, $module );
+          return update_option( $optName, $data );
         }
-
-        return update_option( $optName, $data );
+        return true;
       }
 
       /**
@@ -209,15 +209,12 @@ namespace UsabilityDynamics\Module {
       public function disableModule( $module ) {
         $optName = 'ud:module:' . $this->system . ':enabled';
         $data    = get_option( $optName, array() );
-        if( in_array( $module, $data ) ) {
-          foreach( $data as $i => $_module ) {
-            if( $module = $_module ) {
-              unset( $data[ $i ] );
-            }
-          }
+        $pos = array_search( $module, $data );
+        if( $pos && isset( $data[ $pos ] ) ) {
+          unset( $data[ $pos ] );
+          return update_option( $optName, $data );
         }
-
-        return update_option( $optName, $data );
+        return true;
       }
 
       /**
@@ -293,7 +290,7 @@ namespace UsabilityDynamics\Module {
             throw new \Exception( sprintf( __( 'Install failed. Unable to install module \'%s\' to file system.' ), $module ) );
           }
           //echo "<pre>"; print_r( $result ); echo "</pre>";die();
-        } catch( \Exception $e ) {
+        } catch ( \Exception $e ) {
           /** @todo: add error handler instead of wp_die!!! */
           wp_die( $e->getMessage() );
 

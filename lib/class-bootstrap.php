@@ -131,7 +131,7 @@ namespace UsabilityDynamics\Module {
           } else {
             throw new \Exception( __( 'Something went wrong. Could not enable module(s).' ) );
           }
-        } catch ( Exception $e ) {
+        } catch ( \Exception $e ) {
           /** @todo: add error handler instead of wp_die!!! */
           wp_die( $e->getMessage() );
           return false;
@@ -167,7 +167,7 @@ namespace UsabilityDynamics\Module {
           } else {
             throw new \Exception( __( 'Something went wrong. Could not disable module(s).' ) );
           }
-        } catch ( Exception $e ) {
+        } catch ( \Exception $e ) {
           /** @todo: add error handler instead of wp_die!!! */
           wp_die( $e->getMessage() );
           return false;
@@ -193,9 +193,9 @@ namespace UsabilityDynamics\Module {
        *
        * @author peshkov@UD
        */
-      private function _runMode( $mode = false ) {
+      private function _runMode() {
       
-        switch( $mode ) {
+        switch( $this->args[ 'mode' ] ) {
         
           /**
            * Default Mode.
