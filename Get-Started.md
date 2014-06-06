@@ -12,7 +12,7 @@
     // Determines which modules can be installed for current plugin ( theme ).
     'system' => null,
     // Required. Version of current plugin|theme. 
-    // Determines which modules ( and their versions ) current system's version supports.
+    // Determines which modules ( and their versions ) current system version supports.
     'version' => null,
     // Required. Path, where plugin's modules must be installed. 
     // It may be defined via UD_MODULES_DIR constant to store 
