@@ -184,7 +184,45 @@ namespace UsabilityDynamics\Module {
       public function activateModules() {
         return $this->manager->activateModules();
       }
-
+      
+      /**
+       * Install/Upgrade Modules
+       * Bulk Process
+       * 
+       * @author peshkov@UD
+       */
+      public function loadModules( $modules ) {
+        try {
+          if( is_string( $modules ) ) {
+            $modules = array( $modules );
+          }
+          if ( is_array( $modules ) ) {
+            $installed = $this->getModules( 'installed' );
+            $available = $this->getModules( 'available' );
+            foreach( $modules as $module ) {
+              if( !key_exists( $module, $available ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' is not available.' ), $module ) );
+              }
+              /** Determine if we have to install or upgrade module */
+              if( key_exists( $module, $installed ) ) {
+                if( !$this->manager->upgradeModule( $module ) ){
+                  throw new \Exception( sprintf( __( 'Module \'%s\' could not be upgraded.' ), $module ) );
+                }
+              } else {
+                if( !$this->manager->installModule( $module ) ){
+                  throw new \Exception( sprintf( __( 'Module \'%s\' could not be installed.' ), $module ) );
+                }
+              }
+            }
+          }
+        } catch ( \Exception $e ) {
+          /** @todo: add error handler instead of wp_die!!! */
+          wp_die( $e->getMessage() );
+          return false;
+        }
+        return true;
+      }
+      
       /**
        * Handles some actions
        * Adds automatic processes for different cases ( modes )
@@ -225,7 +263,9 @@ namespace UsabilityDynamics\Module {
               $transient = get_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run' );
             }
             if( empty( $transient ) ) {
-              /** Enable All Installed Modules */
+              /** Maybe Install/Upgrade all Modules */
+              $this->loadModules( array_keys( $this->getModules( 'available' ) ) );
+              /** Maybe Enable All Installed Modules */
               $this->enableModules( array_keys( $this->getModules( 'installed' ) ) );
             }
             /** Set TM to call functionality above once per week. */

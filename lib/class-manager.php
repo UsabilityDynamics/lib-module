@@ -101,22 +101,6 @@ namespace UsabilityDynamics\Module {
       }
 
       /**
-       * If module does not already exist, do not install it. (optional)
-       *
-       */
-      public function upgrade() {
-
-      }
-
-      /**
-       * Download any missing / outdated modules from repository
-       *
-       */
-      public function upgradeModules() {
-
-      }
-
-      /**
        * Validates a specific module - make sure it can be enabled.
        *
        */
@@ -218,19 +202,53 @@ namespace UsabilityDynamics\Module {
       }
 
       /**
-       * Install Module from Repository
+       * Upgrades Module
+       *
+       */
+      public function upgradeModule( $module ) {
+        /** Be sure that module is not installed. */
+        if( !$_module = $this->getModules( "installed.{$module}", false ) ) {
+          throw new \Exception( sprintf( __( 'Module \'%s\' can not be upgraded because it is not installed.' ), $module ) );
+        }
+        /** Be sure that available module's version is higher then existing one */
+        if( version_compare( $_module[ 'data' ][ 'version' ], $this->getModules( "available.{$module}.data.version" ) ) >= 0 ) {
+          throw new \Exception( sprintf( __( 'The current Module \'%s\' version is the latest.' ), $module ) );
+        }
+        return $this->loadModule( $module, array(
+          'abort_if_destination_exists' => false,
+          'clear_destination'           => true,
+        ) );
+      }
+      
+      /**
+       * Installs Module
+       *
+       */
+      public function installModule( $module ) {
+        /** Be sure that module is not installed. */
+        if( $this->getModules( "installed.{$module}" ) ) {
+          throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
+        }
+        return $this->loadModule( $module, array(
+          'abort_if_destination_exists' => true,
+          'clear_destination'           => false,
+        ) );
+      }
+      
+      /**
+       * Loads Module from Repository
        *
        * @param string $module Slug of module which must be installed
        *
        * @return bool
        * @author peshkov@UD
        */
-      public function install( $module ) {
+      private function loadModule( $module, $args = array() ) {
         try {
-          /** Be sure that module is not installed. */
-          if( $this->getModules( "installed.{$module}" ) ) {
-            throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
-          }
+          $args = wp_parse_args( $args, array( 
+            'abort_if_destination_exists' => false,
+            'clear_destination'           => true,
+          ) );
           $_module = $this->getModules( "available.{$module}" );
           /** Be sure we have information about module */
           if( empty( $_module[ 'data' ] ) ) {
@@ -279,8 +297,8 @@ namespace UsabilityDynamics\Module {
           $result = $upgrader->install_package( array(
             'source'                      => $source,
             'destination'                 => $destDir,
-            'abort_if_destination_exists' => false,
-            'clear_destination'           => true,
+            'abort_if_destination_exists' => $args[ 'abort_if_destination_exists' ],
+            'clear_destination'           => $args[ 'clear_destination' ],
             'hook_extra'                  => array(
               'module'  => $module,
               'manager' => $this,
