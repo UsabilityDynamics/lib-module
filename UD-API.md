@@ -11,7 +11,7 @@ POST
 ```json
 {
   "installed":{
-    "usabilitydynamics/wp-property-admin-tools" : 3.6.0
+    "usabilitydynamics/wp-property-admin-tools" : "3.6.0"
   }
 }
 ```
@@ -58,4 +58,21 @@ Example (data below is required):
 
 #Validate Module
 ##Request
+###URL
+http://api.ud-dev.com/modules/v2/validate?key={access_token}&system={slug}&version={system_version}
+###Method
+POST
+###Params
+```json
+{
+  "module": "usabilitydynamics/wp-property-admin-tools"
+}
+```
 ##Response
+Example
+```json
+{
+  "ok": true,
+  "is_valid": true
+}
+```
