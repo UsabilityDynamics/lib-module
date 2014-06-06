@@ -73,6 +73,12 @@ Library handles the following:
    * based on the current system.
    */
   $moduleManager->getModules( 'installed' );
+  
+  /**
+   * Get specific data.
+   . e.g.: get version of some installed module.
+   */
+  $moduleManager->getModules( 'installed.{module_name}.data.version' );
 ```
 
 ### Install | Upgrade Module(s)
