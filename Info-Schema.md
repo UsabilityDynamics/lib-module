@@ -1,6 +1,6 @@
 ##Composer.json
 Module must store some specific information in composer.json
-The below is the example of stored JSON data.
+The example of stored JSON data is below.
 
 ```json
 {
