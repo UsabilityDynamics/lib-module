@@ -1,5 +1,6 @@
 {
   "name": "usabilitydynamics/lib-module",
+  "version": "0.1.0",
   "type": "library",
   "license": "MIT",
   "description": "Modules Manager.",
