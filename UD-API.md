@@ -28,7 +28,7 @@ Example (data below is required):
         "php": ">=5.3"
       },
       "dist": {
-        "url": "https://github.com/UsabilityDynamics/wp-property-admin-tools/archive/3.6.0.zip"
+        "url": "https://github.com/blahblah/blah/3.6.0.zip"
       },
       "extra": {
         "title": {
