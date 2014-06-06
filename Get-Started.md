@@ -15,9 +15,10 @@
     // Determines which modules ( and their versions ) current system's version supports.
     'version' => null,
     // Required. Path, where plugin's modules must be installed. 
-    // It may be defined via UD_MODULES_DIR constant to store all modules in the same place.
-    // Note, if UD_MODULES_DIR is defined, modules will be stored under system directory
-    // to prevent trying to load modules of another system.
+    // It may be defined via UD_MODULES_DIR constant to store 
+    // all modules in the same place. Note, if UD_MODULES_DIR is defined,
+    // modules will be stored under system directory to prevent 
+    // trying to load modules of another system.
     // Example: {UD_MODULES_DIR}/wp-property/
     'path' => null,
     // Optional. Use or not use transient memory.
