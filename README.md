@@ -88,9 +88,9 @@ Library handles the following:
    *
    */
   $moduleManager->loadModules( array(
-    '{usabilitydynamics/wp-property-admin-tools}',
-    '{usabilitydynamics/wp-property-importer}',
-    '{usabilitydynamics/lib-term-editor}',
+    'usabilitydynamics/wp-property-admin-tools',
+    'usabilitydynamics/wp-property-importer',
+    'usabilitydynamics/lib-term-editor',
   ) );
 ```
 
@@ -100,9 +100,9 @@ Library handles the following:
    * Enables module(s) for current system.
    */
   $moduleManager->enableModules( array(
-    '{usabilitydynamics/wp-property-admin-tools}',
-    '{usabilitydynamics/wp-property-importer}',
-    '{usabilitydynamics/lib-term-editor}',
+    'usabilitydynamics/wp-property-admin-tools',
+    'usabilitydynamics/wp-property-importer',
+    'usabilitydynamics/lib-term-editor',
   ) );
 ```
 
@@ -112,9 +112,9 @@ Library handles the following:
    * Disables module(s) for current system.
    */
   $moduleManager->disableModules( array(
-    '{usabilitydynamics/wp-property-admin-tools}',
-    '{usabilitydynamics/wp-property-importer}',
-    '{usabilitydynamics/lib-term-editor}',
+    'usabilitydynamics/wp-property-admin-tools',
+    'usabilitydynamics/wp-property-importer',
+    'usabilitydynamics/lib-term-editor',
   ) );
 ```
 
