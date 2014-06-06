@@ -147,29 +147,41 @@ namespace UsabilityDynamics\Module {
               $this->disableModule( $name );
               continue;
             }
-            /** Now try to activate and init module */
-            if( empty( $module[ 'classmap' ] ) ) {
-              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Missed classmap parameter.' ), $module[ 'name' ] ) );
+            /** Maybe check required minimum PHP version */
+            if( !empty( $module[ 'data' ][ 'minimum_php' ] ) ) {
+              $requiredPhpVersion = floatval( preg_replace( "/[^-0-9\.]/", "", $module[ 'data' ][ 'minimum_php' ] ) );
+              $operator = preg_replace( "/[^><=]/", "", $module[ 'data' ][ 'minimum_php' ] ) );
+              if( empty( $operator ) ) {
+                $operator = '>=';
+              }
+              if( $requiredPhpVersion > 0 ) {
+                if( !version_compare( phpversion(), $requiredPhpVersion, $operator ) ) {
+                  throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Your PHP version is less than required one.' ), $module[ 'data' ][ 'name' ] ) );
+                }
+              }
             }
-            $classFile = $module[ 'path' ] . '/' . ltrim( $module[ 'classmap' ], '/' );
+            /** Now try to activate and init module */
+            if( empty( $module[ 'data' ][ 'classmap' ] ) ) {
+              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Missed classmap parameter.' ), $module[ 'data' ][ 'name' ] ) );
+            }
+            $classFile = $module[ 'path' ] . '/' . ltrim( $module[ 'data' ][ 'classmap' ], '/' );
             if( !file_exists( $classFile ) ) {
-              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap file does not exist.' ), $module[ 'name' ] ) );
+              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap file does not exist.' ), $module[ 'data' ][ 'name' ] ) );
             }
             /** Determine if class exists and include it if it does not. */
-            if( !class_exists( $module[ 'bootstrap' ] ) ) {
+            if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
               include_once( $classFile );
-              if( !class_exists( $module[ 'bootstrap' ] ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap class does not exist.' ), $module[ 'name' ] ) );
+              if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap class does not exist.' ), $module[ 'data' ][ 'name' ] ) );
               }
             }
             /** Activate module and add it to the list of activated modules. */
-            new $module[ 'bootstrap' ];
+            new $module[ 'data' ][ 'bootstrap' ];
             array_push( $this->modules[ 'activated' ], $name );
           }
         } catch( \Exception $e ) {
           /** @todo: add error handler instead of wp_die!!! */
           wp_die( $e->getMessage() );
-
           return false;
         }
 
@@ -351,10 +363,13 @@ namespace UsabilityDynamics\Module {
         if( !empty( $response ) ) {
           $response = json_decode( $response, true );
         } else {
-          $modules = $this->getModules( 'installed' );
+          $installed = array();
+          foreach( $this->getModules( 'installed' ) as $k => $v ) {
+            $installed[ $k ] = $v[ 'data' ][ 'version' ];
+          }
           /** Do request to UD */
           $response = $this->_doRequest( 'loadout', array(
-            'installed' => array(),
+            'installed' => $installed,
           ) );
           /** Determine if request was successful */
           if( !isset( $response[ 'ok' ] ) || $response[ 'ok' ] != true ) {
