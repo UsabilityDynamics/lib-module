@@ -103,10 +103,10 @@ namespace UsabilityDynamics\Module {
         
         /** Maybe Add specific transients to transients list. Needed for resetTransient() functionality. */
         foreach( $this->modules[ 'installed' ] as $k => $m ) {
-          $this->addTransient( "ud:module:validateModule:" . sanitize_key( $k ) );
+          $this->addTransient( "ud:module:validate:" . sanitize_key( $k ) );
         }
         foreach( $this->modules[ 'available' ] as $k => $m ) {
-          $this->addTransient( "ud:module:validateModule:" . sanitize_key( $k ) );
+          $this->addTransient( "ud:module:validate:" . sanitize_key( $k ) );
         }
         //echo "<pre>"; print_r( $this ); echo "</pre>"; die();
       }
@@ -155,7 +155,7 @@ namespace UsabilityDynamics\Module {
         $is_valid = false;
         /** Maybe get cache */
         if( $this->cache ) {
-          $cache = get_transient( "ud:module:validateModule:" . sanitize_key( $module ) );
+          $cache = get_transient( "ud:module:validate:" . sanitize_key( $module ) );
         }
         /** If there is no cache, Do request to UD server. */
         if( !empty( $cache ) ) {
@@ -170,7 +170,7 @@ namespace UsabilityDynamics\Module {
             $is_valid = isset( $response[ 'is_valid' ] ) ? $response[ 'is_valid' ] : false;
           }
           /** Cache our result per day. */
-          set_transient( "ud:module:validateModule:" . sanitize_key( $module ), $is_valid, ( 60 * 60 * 24 ) );
+          set_transient( "ud:module:validate:" . sanitize_key( $module ), $is_valid, ( 60 * 60 * 24 ) );
         }
         return $is_valid;
       }

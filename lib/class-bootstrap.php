@@ -265,16 +265,16 @@ namespace UsabilityDynamics\Module {
           case 'automaticModulesInstallUpgrade':
             /** Use TM ( transient memory ) to prevent call of functionality below on every server request! */
             if( $this->args[ 'cache' ] ) {
-              $transient = get_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run' );
+              $transient = get_transient( 'ud:module:mode:automatic' );
             }
             if( empty( $transient ) ) {
               /** Maybe Install/Upgrade all Modules */
-              $this->loadModules( array_keys( $this->getModules( 'available' ) ) );
+              //$this->loadModules( array_keys( $this->getModules( 'available' ) ) );
               /** Maybe Enable All Installed Modules */
               $this->enableModules( array_keys( $this->getModules( 'installed' ) ) );
             }
             /** Set TM to call functionality above once per week. */
-            set_transient( 'ud:module:mode:automaticModulesInstallUpgrade:run', 'true', ( 60 * 60 * 24 * 7 ) );
+            set_transient( 'ud:module:mode:automatic', 'true', ( 60 * 60 * 24 * 7 ) );
             /** Activate all enabled modules */
             $this->activateModules();
             break;
