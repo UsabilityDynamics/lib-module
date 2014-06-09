@@ -13,6 +13,7 @@ Library handles the following:
 * Implement User Interface.
 * Add REST.
 * Add Error Handler.
+* Add Mocha Test.
 
 ##Get Started
 
