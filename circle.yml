@@ -37,7 +37,7 @@ test:
   override:
     - phpunit test/php
     
-  post
+  post:
     - grunt clean:test
   
 notify:
