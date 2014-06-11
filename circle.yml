@@ -4,14 +4,14 @@ machine:
     America/Los_Angeles
 
   node:
-    version: v0.8.2
+    version: 0.11.8
 
   php:
     version: 5.5.11
 
   hosts:
-    circlehost: 127.0.0.1
-    dev.mycompany.com: 127.0.0.1
+    api.usabilitydynamics.com: 127.0.0.1
+    api.ud-dev.com: 127.0.0.1
 
   environment:
     NODE_ENV: development
