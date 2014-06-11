@@ -1,0 +1,45 @@
+machine:
+
+  timezone:
+    America/Los_Angeles
+
+  node:
+    version: v0.8.2
+
+  php:
+    version: 5.5.11
+
+  hosts:
+    circlehost: 127.0.0.1
+    dev.mycompany.com: 127.0.0.1
+
+  environment:
+    CIRCLE_ENV: test
+    DATABASE_URL: mysql://ubuntu:@127.0.0.1:5432/circle_test
+
+  services:
+    - elasticsearch
+
+database:
+  override:
+    - mysql -u ubuntu circle_test < my-database-setup.sql
+
+dependencies:
+  pre:
+    - composer install
+    - npm install -g grunt
+    - grunt install
+    
+  override:
+    - npm install --dev
+    
+test:
+  override:
+    - phpunit test/php
+    
+  post
+    - grunt clean:test
+  
+notify:
+  webhooks:
+    - url: https://api.usabilitydynamics.com/audits/v1/update
