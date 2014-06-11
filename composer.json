@@ -30,6 +30,6 @@
     "squizlabs/php_codesniffer": "1.*"
   },
   "autoload": {
-    "classmap": [ "lib/*" ]
+    "classmap": [ "lib" ]
   }
 }
