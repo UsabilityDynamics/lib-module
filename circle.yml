@@ -27,7 +27,6 @@ database:
 dependencies:
   pre:
     - composer install
-    - npm install -g grunt
     - grunt install
     
   override:
