@@ -10,33 +10,29 @@ machine:
     version: 5.3.3
 
   hosts:
-    usabilitydynamics.com: 127.0.0.1
-    www.usabilitydynamics.com: 127.0.0.1
     api.usabilitydynamics.com: 127.0.0.1
     api.ud-dev.com: 127.0.0.1
 
   environment:
     NODE_ENV: development
     PHP_ENV: development
-    DATABASE_URL: mysql://ubuntu:@127.0.0.1:5432/circle_test
 
 checkout:
   post:
-    - git submodule sync
-    - git submodule update --init
-
-dependencies:
-  pre:
-    - pear install PHP_CodeSniffer
+    # - git submodule sync
+    # - git submodule update --init
 
 test:
   override:
-    - phpcs static/tests/phpunit
-    - phpunit static/tests/phpunit
-    - mocha static/tests/mocha --reporter list --ui exports --require should
+    - grunt test
+    - grunt audit
+    # - phpcs static/tests/phpunit
+    # - phpunit static/tests/phpunit
+    # - mocha static/tests/mocha --reporter list --ui exports --require should
     
   post:
     - grunt clean:test
+    # @todo Commit wiki
   
 notify:
   webhooks:
