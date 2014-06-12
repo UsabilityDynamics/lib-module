@@ -62,7 +62,7 @@ module.exports = function build( grunt ) {
         bin: _paths.phpcs,
         standard: 'PSR2',
         warningSeverity: 1,
-        reportFile: 'static/wiki/phpcs.md'
+        reportFile: 'static/wiki/PHP-CS.md'
       },
       application: {
         dir: [ 'lib/*.php' ]
@@ -163,7 +163,7 @@ module.exports = function build( grunt ) {
   });
 
   // Register NPM Tasks.
-  grunt.registerTask( 'default', [ 'markdown' , 'yuidoc', 'uglify' ] );
+  grunt.registerTask( 'default', [ 'markdown' , 'yuidoc', 'uglify', 'phpcs' ] );
 
   // Run Quick Tests.
   grunt.registerTask( 'test', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit' ] );
