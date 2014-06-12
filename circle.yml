@@ -4,7 +4,7 @@ machine:
     America/New_York
 
   node:
-    version: 0.11.8
+    version: 0.10.28
 
   php:
     version: 5.3.3
