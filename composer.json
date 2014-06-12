@@ -9,6 +9,12 @@
     "module",
     "manager"
   ],
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://repository.usabilitydynamics.com"
+    }
+  ],  
   "authors": [
     {
       "name": "Andy Potanin",
@@ -21,14 +27,20 @@
       "role": "Developer"
     }
   ],
-  "license": "MIT",
   "minimum-stability": "dev",
   "require": {
-    "php": ">=5.3"
+    "php": ">=5.3",
+    "usabilitydynamics/lib-utility": "*"
   },
   "require-dev": {
-    "squizlabs/php_codesniffer": "1.*"
+    "phpmd/phpmd": "master",
+    "phpunit/phpunit": "master",
+    "squizlabs/php_codesniffer": "master",
+    "sebastian/phpcpd": "master"
   },
+  "extra": {
+    "component": {}
+  },  
   "autoload": {
     "classmap": [ "lib" ]
   }

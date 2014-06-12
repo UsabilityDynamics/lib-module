@@ -6,7 +6,7 @@
  */
 namespace UsabilityDynamics\Module {
 
-  if( !class_exists( 'UsabilityDynamics\Module\Upgrader' ) ) {
+  if( !class_exists( 'UsabilityDynamics\Module\Upgrader' ) && class_exists( 'WP_Upgrader' ) ) {
 
     /**
      * 

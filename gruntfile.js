@@ -7,18 +7,38 @@
  */
 module.exports = function build( grunt ) {
 
+  // Require Utility Modules.
+  var joinPath  = require( 'path' ).join;
+  var findup    = require( 'findup-sync' );
+
+  // Determine Paths.
+  var _paths = {
+    composer: findup( 'composer.json' ),
+    phpcs: findup( 'vendor/bin/phpcs' ) || findup( 'phpcs', { cwd: '/usr/bin' } ),
+    vendor: findup( 'vendor' ),
+    phpTests: findup( 'static/tests/phpunit' ),
+    jsTests: findup( 'static/tests/mocha' )
+  };
+
+  // Automatically Load Tasks.
+  require( 'load-grunt-tasks' )( grunt, {
+    pattern: 'grunt-*',
+    config: './package.json',
+    scope: 'devDependencies'
+  });
+
   grunt.initConfig( {
 
     // Read Composer File.
-    pkg: grunt.file.readJSON( 'composer.json' ),
+    composer: grunt.file.readJSON( 'composer.json' ),
 
     // Generate Documentation.
     yuidoc: {
       compile: {
-        name: '<%= pkg.name %>',
-        description: '<%= pkg.description %>',
-        version: '<%= pkg.version %>',
-        url: '<%= pkg.homepage %>',
+        name: '<%= composer.name %>',
+        description: '<%= composer.description %>',
+        version: '<%= composer.version %>',
+        url: '<%= composer.homepage %>',
         options: {
           paths: 'lib',
           outdir: 'static/codex/'
@@ -26,22 +46,26 @@ module.exports = function build( grunt ) {
       }
     },
 
-    // Compile LESS.
-    less: {
-      development: {
-        options: {
-          relativeUrls: true
-        },
-        files: {
-        }
+    phpunit: {
+      classes: {
+        dir: joinPath( _paths.phpTests, '*.php' )
       },
-      production: {
-        options: {
-          yuicompress: true,
-          relativeUrls: true
-        },
-        files: {
-        }
+      options: {
+        bin: 'phpunit',
+        bootstrap: _paths.autoload,
+        colors: true
+      }
+    },
+
+    phpcs: {
+      options: {
+        bin: _paths.phpcs,
+        standard: 'PSR2',
+        warningSeverity: 1,
+        reportFile: 'static/wiki/phpcs.md'
+      },
+      application: {
+        dir: [ 'lib/*.php' ]
       }
     },
 
@@ -50,12 +74,6 @@ module.exports = function build( grunt ) {
       options: {
         interval: 100,
         debounceDelay: 500
-      },
-      less: {
-        files: [
-          'static/styles/src/*.*'
-        ],
-        tasks: [ 'less' ]
       },
       js: {
         files: [
@@ -108,67 +126,50 @@ module.exports = function build( grunt ) {
 
     // Clean for Development.
     clean: {
-      all: [
-        "vendor",
-        "static/readme.md",
-        "composer.lock",
-        "static/styles/*.css",
-        "static/scripts/*.js"
-      ],
-      update: [
+      composer: [
         "composer.lock"
+      ],
+      test: [
+        ".test"
       ]
     },
 
     // CLI Commands.
     shell: {
+      install: {
+        options: { stdout: true },
+        command: 'composer install --prefer-dist --dev --no-interaction --quiet'
+      },
       update: {
-        options: {
-          stdout: true
-        },
-        command: 'composer update --prefer-source'
+        options: { stdout: true },
+        command: 'composer update --prefer-source --no-interaction --quiet'
       }
     },
 
-    // Coverage Tests.
-    mochacov: {
+    // Tests.
+    mochaTest: {
       options: {
+        timeout: 10000,
+        log: true,
+        require: [ 'should' ],
         reporter: 'list',
-        requires: [ 'should' ]
+        ui: 'exports'
       },
-      all: [ 'test/*.js' ]
-    },
-
-    // Usage Tests.
-    mochacli: {
-      options: {
-        requires: [ 'should' ],
-        reporter: 'list',
-        ui: 'exports',
-        bail: false
-      },
-      all: [
-        'test/*.js'
-      ]
+      basic: {
+        src: [ 'static/tests/mocha/*.js' ]
+      }
     }
 
   });
 
-  // Load NPM Tasks.
-  grunt.loadNpmTasks( 'grunt-markdown' );
-  grunt.loadNpmTasks( 'grunt-requirejs' );
-  grunt.loadNpmTasks( 'grunt-contrib-yuidoc' );
-  grunt.loadNpmTasks( 'grunt-contrib-uglify' );
-  grunt.loadNpmTasks( 'grunt-contrib-watch' );
-  grunt.loadNpmTasks( 'grunt-contrib-less' );
-  grunt.loadNpmTasks( 'grunt-contrib-concat' );
-  grunt.loadNpmTasks( 'grunt-contrib-clean' );
-  grunt.loadNpmTasks( 'grunt-shell' );
-  grunt.loadNpmTasks( 'grunt-mocha-cli' );
-  grunt.loadNpmTasks( 'grunt-mocha-cov' );
-
   // Register NPM Tasks.
-  grunt.registerTask( 'default', [ 'markdown', 'less' , 'yuidoc', 'uglify' ] );
+  grunt.registerTask( 'default', [ 'markdown' , 'yuidoc', 'uglify' ] );
+
+  // Run Quick Tests.
+  grunt.registerTask( 'test', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit' ] );
+  
+  // Run Module Audit.
+  grunt.registerTask( 'audit', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit', 'phpcs' ] );
 
   // Build Distribution.
   grunt.registerTask( 'distribution', [ 'mochacli:all', 'mochacov:all', 'clean:all', 'markdown', 'less:production', 'uglify:production' ] );

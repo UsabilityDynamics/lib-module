@@ -1,15 +1,17 @@
 machine:
 
   timezone:
-    America/Los_Angeles
+    America/New_York
 
   node:
     version: 0.11.8
 
   php:
-    version: 5.5.11
+    version: 5.3.3
 
   hosts:
+    usabilitydynamics.com: 127.0.0.1
+    www.usabilitydynamics.com: 127.0.0.1
     api.usabilitydynamics.com: 127.0.0.1
     api.ud-dev.com: 127.0.0.1
 
@@ -18,29 +20,20 @@ machine:
     PHP_ENV: development
     DATABASE_URL: mysql://ubuntu:@127.0.0.1:5432/circle_test
 
-  services:
-    - elasticsearch
-
 checkout:
   post:
     - git submodule sync
     - git submodule update --init
 
-database:
-  override:
-    - mysql -u ubuntu circle_test < my-database-setup.sql
-
 dependencies:
   pre:
-    - npm install grunt-cli --global
-    - composer install
-    
-  override:
-    - npm install --dev
-    
+    - pear install PHP_CodeSniffer
+
 test:
   override:
-    - phpunit test/php
+    - phpcs static/tests/phpunit
+    - phpunit static/tests/phpunit
+    - mocha static/tests/mocha --reporter list --ui exports --require should
     
   post:
     - grunt clean:test

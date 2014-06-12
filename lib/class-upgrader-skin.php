@@ -7,7 +7,7 @@
  */
 namespace UsabilityDynamics\Module {
 
-  if( !class_exists( 'UsabilityDynamics\Module\Upgrader_Skin' ) ) {
+  if( !class_exists( 'UsabilityDynamics\Module\Upgrader_Skin' ) && class_exists( 'WP_Upgrader_Skin' ) ) {
 
     /**
      * Silent SKin

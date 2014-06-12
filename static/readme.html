@@ -1,0 +1,233 @@
+<!DOCTYPE  html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>doc</title>
+    <style>
+      /*github.com style (c) Vasily Polovnyov <vast@whiteants.net>*/
+      pre code {
+        display: block; padding: 0.5em;
+        color: #333;
+        background: #f8f8ff
+      }
+      pre .comment,
+      pre .template_comment,
+      pre .diff .header,
+      pre .javadoc {
+        color: #998;
+        font-style: italic
+      }
+      pre .keyword,
+      pre .css .rule .keyword,
+      pre .winutils,
+      pre .javascript .title,
+      pre .nginx .title,
+      pre .subst,
+      pre .request,
+      pre .status {
+        color: #333;
+        font-weight: bold
+      }
+      pre .number,
+      pre .hexcolor,
+      pre .ruby .constant {
+        color: #099;
+      }
+      pre .string,
+      pre .tag .value,
+      pre .phpdoc,
+      pre .tex .formula {
+        color: #d14
+      }
+      pre .title,
+      pre .id {
+        color: #900;
+        font-weight: bold
+      }
+      pre .javascript .title,
+      pre .lisp .title,
+      pre .clojure .title,
+      pre .subst {
+        font-weight: normal
+      }
+      pre .class .title,
+      pre .haskell .type,
+      pre .vhdl .literal,
+      pre .tex .command {
+        color: #458;
+        font-weight: bold
+      }
+      pre .tag,
+      pre .tag .title,
+      pre .rules .property,
+      pre .django .tag .keyword {
+        color: #000080;
+        font-weight: normal
+      }
+      pre .attribute,
+      pre .variable,
+      pre .lisp .body {
+        color: #008080
+      }
+      pre .regexp {
+        color: #009926
+      }
+      pre .class {
+        color: #458;
+        font-weight: bold
+      }
+      pre .symbol,
+      pre .ruby .symbol .string,
+      pre .lisp .keyword,
+      pre .tex .special,
+      pre .prompt {
+        color: #990073
+      }
+      pre .built_in,
+      pre .lisp .title,
+      pre .clojure .built_in {
+        color: #0086b3
+      }
+      pre .preprocessor,
+      pre .pi,
+      pre .doctype,
+      pre .shebang,
+      pre .cdata {
+        color: #999;
+        font-weight: bold
+      }
+      pre .deletion {
+        background: #fdd
+      }
+      pre .addition {
+        background: #dfd
+      }
+      pre .diff .change {
+        background: #0086b3
+      }
+      pre .chunk {
+        color: #aaa
+      }
+    </style>
+  </head>
+  <body>  
+    <h1 id="modules-manager">Modules Manager</h1>
+<h2 id="description">Description</h2>
+<p>Library handles the following:</p>
+<ul>
+<li>Checks permissions and returns the list of available modules.</li>
+<li>Uploads specific modules from remote repository.</li>
+<li>Upgrades existing modules to the required versions.</li>
+<li>Enables/disables modules.</li>
+<li>Activates enabled modules.</li>
+</ul>
+<h2 id="todo">TODO</h2>
+<ul>
+<li>Implement User Interface.</li>
+<li>Add REST.</li>
+<li>Add Error Handler.</li>
+<li>Add Mocha Test.</li>
+</ul>
+<h2 id="get-started">Get Started</h2>
+<h3 id="initialization">Initialization</h3>
+<pre><code class="lang-php">  /**
+   * Init our Modules Manager.
+   * Must be initialized before &#39;init&#39; action.
+   */
+  $moduleManager = new UsabilityDynamics\Module\Bootstrap( array(
+    // Required. API Key ( or Access Token ). 
+    // It&#39;s related to current domain/site.
+    &#39;key&#39; =&gt; false,
+    // Required. Slug of current system ( plugin|theme ) 
+    // Determines which modules can be installed for current plugin ( theme ).
+    &#39;system&#39; =&gt; null,
+    // Required. Version of current plugin|theme. 
+    // Determines which modules ( and their versions ) current system&#39;s version supports.
+    &#39;version&#39; =&gt; null,
+    // Required. Path, where plugin&#39;s modules must be installed. 
+    // It may be defined via UD_MODULES_DIR constant to store all modules in the same place.
+    // Note, if UD_MODULES_DIR is defined, modules will be stored under system directory
+    // to prevent trying to load modules of another system.
+    // Example: {UD_MODULES_DIR}/wp-property/
+    &#39;path&#39; =&gt; null,
+    // Optional. Use or not use transient memory.
+    &#39;cache&#39; =&gt; true,
+    // Optional. Mode Handler can be used to do some processes automatic. 
+    // see UsabilityDynamics\Module\Bootstrap::_runMode().
+    &#39;mode&#39; =&gt; &#39;default&#39;,
+  ) );</code></pre>
+<h3 id="get-list-of-modules">Get List of Modules</h3>
+<pre><code class="lang-php">  /** 
+   * Returns the list of all modules.
+   */
+  $moduleManager-&gt;getModules();
+
+  /**
+   * Get the list of all activated modules.
+   * In default mode, modules are being activated automatically
+   * But you can set any custom mode, - in this case 
+   * you will have to activate modules manually.
+   */
+  $moduleManager-&gt;getModules( &#39;activated&#39; );
+
+  /**
+   * Get the list of all available modules
+   * which can be Installed or Upgraded ( have new version)
+   * based on the current system.
+   */
+   $moduleManager-&gt;getModules( &#39;available&#39; );
+
+  /**
+   * Get the list of all installed ( downloaded ) modules
+   * based on the current system.
+   */
+  $moduleManager-&gt;getModules( &#39;installed&#39; );
+
+  /**
+   * Get specific data.
+   . e.g.: get version of some installed module.
+   */
+  $moduleManager-&gt;getModules( &#39;installed.{module_name}.data.version&#39; );</code></pre>
+<h3 id="install-upgrade-module-s-">Install | Upgrade Module(s)</h3>
+<pre><code class="lang-php">  /**
+   * The method handles install and upgrade processes.
+   *
+   */
+  $moduleManager-&gt;loadModules( array(
+    &#39;usabilitydynamics/wp-property-admin-tools&#39;,
+    &#39;usabilitydynamics/wp-property-importer&#39;,
+    &#39;usabilitydynamics/lib-term-editor&#39;,
+  ) );</code></pre>
+<h3 id="enable-module-s-">Enable Module(s)</h3>
+<pre><code class="lang-php">  /**
+   * Enables module(s) for current system.
+   */
+  $moduleManager-&gt;enableModules( array(
+    &#39;usabilitydynamics/wp-property-admin-tools&#39;,
+    &#39;usabilitydynamics/wp-property-importer&#39;,
+    &#39;usabilitydynamics/lib-term-editor&#39;,
+  ) );</code></pre>
+<h3 id="disable-module-s-">Disable Module(s)</h3>
+<pre><code class="lang-php">  /**
+   * Disables module(s) for current system.
+   */
+  $moduleManager-&gt;disableModules( array(
+    &#39;usabilitydynamics/wp-property-admin-tools&#39;,
+    &#39;usabilitydynamics/wp-property-importer&#39;,
+    &#39;usabilitydynamics/lib-term-editor&#39;,
+  ) );</code></pre>
+<h3 id="activate-init-modules">Activate ( init ) Modules</h3>
+<pre><code class="lang-php">  /**
+   * Activates all enabled modules.
+   * 
+   * The current process is automatically called
+   * on Module Manager initialization if mode is &#39;default&#39;.
+   * In other case you have to call the method manually.
+   * 
+   * Method must be called before &#39;init&#39; action.
+   */
+  $moduleManager-&gt;activateModules();</code></pre>
+
+  </body>
+</html>
