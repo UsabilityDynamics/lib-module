@@ -119,28 +119,19 @@ namespace UsabilityDynamics\Module {
        * @author peshkov@UD
        */
       public function enableModules( $modules = array() ) {
-        try {
-          if( is_string( $modules ) ) {
-            $modules = array( $modules );
-          }
-          if ( is_array( $modules ) ) {
-            $_modules = $this->getModules( 'installed' );
-            foreach( $modules as $module ) {
-              if( !key_exists( $module, $_modules ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' is not installed and can not be enabled.' ), $module ) );
-              }
-              if( !$this->manager->enableModule( $module ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' could not be enabled' ), $module ) );
-              }
-            }
-          } else {
-            throw new \Exception( __( 'Something went wrong. Could not enable module(s).' ) );
-          }
-        } catch ( \Exception $e ) {
-          /** @todo: add error handler */
-          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
+        $s = array(); // List of successfully enabled modules.
+        if( is_string( $modules ) ) {
+          $modules = array( $modules );
         }
-        return true;
+        if ( is_array( $modules ) ) {
+          foreach( $modules as $module ) {
+            $r = $this->manager->enableModule( $module );
+            if( !is_wp_error( $r ) ) {
+              array_push( $s, $module );
+            }
+          }
+        }
+        return $s;
       }
 
       /**
@@ -154,28 +145,19 @@ namespace UsabilityDynamics\Module {
        * @author peshkov@UD
        */
       public function disableModules( $modules = array() ) {
-        try {
-          if( is_string( $modules ) ) {
-            $modules = array( $modules );
-          }
-          if ( is_array( $modules ) ) {
-            $_modules = $this->getModules( 'installed' );
-            foreach( $modules as $module ) {
-              if( !key_exists( $module, $_modules ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' is not installed and can not be disabled as well.' ), $module ) );
-              }
-              if( !$this->manager->disableModule( $module ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' could not be disabled' ), $module ) );
-              }
-            }
-          } else {
-            throw new \Exception( __( 'Something went wrong. Could not disable module(s).' ) );
-          }
-        } catch ( \Exception $e ) {
-          /** @todo: add error handler!!! */
-          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
+        $s = array(); // List of successfully disabled modules.
+        if( is_string( $modules ) ) {
+          $modules = array( $modules );
         }
-        return true;
+        if ( is_array( $modules ) ) {
+          foreach( $modules as $module ) {
+            $r = $this->manager->disableModule( $module );
+            if( !is_wp_error( $r ) ) {
+              array_push( $s, $module );
+            }
+          }
+        }
+        return $s;
       }
       
       /**
@@ -185,44 +167,70 @@ namespace UsabilityDynamics\Module {
        * @author peshkov@UD
        */
       public function activateModules( $modules = null ) {
-        return $this->manager->activateModules( $modules );
+        $s = array(); // List of successfully activated modules
+        $installed = $this->getModules( 'installed' );
+        /** Determine if we should activate specific modules manually */
+        if( !empty( $modules ) ) {
+          $modules = is_string( $modules ) ? array( $modules ) : $modules;
+          $modules = is_array( $modules ) ? $modules : array();
+          foreach( $modules as $k => $m ) {
+            if( !key_exists( $m, $installed ) ) {
+              unset( $modules[ $k ] );
+            }
+          }
+        } else {
+          $modules = array_keys( $installed );
+        }
+        foreach( $modules as $k => $module ) {
+          $r = $this->manager->activateModule( $module );
+          if( !is_wp_error( $r ) ) {
+            array_push( $s, $module );
+          }
+        }
+        return $s;
       }
       
       /**
        * Install/Upgrade Modules
        * Bulk Process
        * 
+       * @return array $s. List of successfully installed and upgraded modules: array( 'installed' => array, 'upgraded' => array() )
        * @author peshkov@UD
        */
       public function loadModules( $modules = array() ) {
-        try {
-          if( is_string( $modules ) ) {
-            $modules = array( $modules );
-          }
-          if ( is_array( $modules ) ) {
-            $installed = $this->getModules( 'installed' );
-            $available = $this->getModules( 'available' );
-            foreach( $modules as $module ) {
-              if( !key_exists( $module, $available ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' is not available.' ), $module ) );
-              }
-              /** Determine if we have to install or upgrade module */
-              if( key_exists( $module, $installed ) ) {
-                if( !$this->manager->upgradeModule( $module ) ){
-                  throw new \Exception( sprintf( __( 'Module \'%s\' could not be upgraded.' ), $module ) );
-                }
-              } else {
-                if( !$this->manager->installModule( $module ) ){
-                  throw new \Exception( sprintf( __( 'Module \'%s\' could not be installed.' ), $module ) );
-                }
-              }
-            }
-          }
-        } catch ( \Exception $e ) {
-          /** @todo: add error handler!!! */
-          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
+        $s = array(
+          'installed' => array(),
+          'upgraded' => array(),
+        ); // List of successfully loaded/upgraded modules
+        if( is_string( $modules ) ) {
+          $modules = array( $modules );
         }
-        return true;
+        if ( is_array( $modules ) ) {
+          $installed = $this->getModules( 'installed' );
+          $available = $this->getModules( 'available' );
+          foreach( $modules as $module ) {
+            if( !key_exists( $module, $available ) ) {
+              continue;
+            }
+            /** Determine if we have to install or upgrade module */
+            if( key_exists( $module, $installed ) ) {
+              $r = $this->manager->upgradeModule( $module );
+              if( !is_wp_error( $r ) ) {
+                array_push( $s[ 'upgraded' ], $module );
+              }
+            } else {
+              $r = $this->manager->installModule( $module );
+              if( !is_wp_error( $r ) ) {
+                array_push( $s[ 'installed' ], $module );
+              }
+            }            
+          }
+        }
+        /** If we have any just installed or upgraded modules, - flush modules data. */
+        if( !empty( $s[ 'installed' ] ) || !empty( $s[ 'upgraded' ] ) ) {
+          $this->manager->flushModulesData();
+        }
+        return $s;
       }
       
       /**
@@ -281,7 +289,7 @@ namespace UsabilityDynamics\Module {
            * Not sure if the hook below is needed here, but added it just in case. peshkov@UD
            */
           default:
-            do_action( "ud:module:mode:{$mode}:run", $this );
+            do_action( "ud:module:mode:{$this->args[ 'mode' ]}:run", $this );
             break;
         
         }

@@ -123,6 +123,19 @@ namespace UsabilityDynamics\Module {
       }
       
       /**
+       * Flush Modules data
+       */
+      public function flushModulesData( $cache = false ) {
+        /** Reset our cache */
+        if( !$cache ) {
+          $this->resetTransient();
+        }
+        /** Update our object's data */
+        $this->modules[ 'installed' ] = $this->_getInstalledModules();
+        $this->modules[ 'available' ] = $this->_getAvailableModules();
+      }
+      
+      /**
        * Adds Transient to list
        *
        * @param string $transient
@@ -179,77 +192,64 @@ namespace UsabilityDynamics\Module {
       }
 
       /**
-       * Activate (instantiate) loaded enabled modules
+       * Activate (instantiate) loaded module
        *
        * Does the following:
-       * - validate modules
-       * - disable modules on validation failed
-       * - activates modules on validation success
+       * - validate module
+       * - disable module on validation failed
+       * - activates module on validation success
        *
+       * @param string $_module
        * @author peshkov@UD
        */
-      public function activateModules( $modules = null ) {
+      public function activateModule( $_module ) {
         try {
-          $enabledModules = get_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', array() );
-          if( !is_array( $enabledModules ) ) {
-            throw new \Exception( __( 'Modules can not be activated because of incorrect Enabled Modules data storing.' ) );
+          /** Determine if module is installed */
+          $module = $this->getModules( "installed.{$_module}" );
+          if( !$module ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated, because it is not installed.' ), $_module ) );
           }
-          $installed = $this->getModules( 'installed' );
-          /** Determine if we should activate specific modules manually */
-          if( !empty( $modules ) ) {
-            $_modules = is_string( $modules ) ? array( $modules ) : $modules;
-            $_modules = is_array( $_modules ) ? $_modules : array();
-            $modules = array();
-            foreach( $_modules as $k => $m ) {
-              if( key_exists( $m, $installed ) ) {
-                $modules[ $m ] = $installed[ $m ];
-              }
-            }
-          } else {
-            $modules = $installed;
+          /** Determine if module is enabled */
+          $enabled = $this->_getEnabledModules();
+          if( !in_array( $_module, $enabled ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated, because it is not enabled.' ), $module[ 'data' ][ 'title' ] ) );
           }
-          foreach( $modules as $name => $module ) {
-            /** Determine if module is enabled */
-            if( !in_array( $name, $enabledModules ) ) {
-              continue;
+          /** Validate module */
+          if( !$this->validateModule( $_module ) ) {
+            $this->disableModule( $_module );
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Check your license.' ), $module[ 'data' ][ 'title' ] ) );
+          }
+          /** Maybe check required minimum PHP version */
+          if( !empty( $module[ 'data' ][ 'minimum_php' ] ) ) {
+            $requiredPhpVersion = floatval( preg_replace( "/[^-0-9\.]/", "", $module[ 'data' ][ 'minimum_php' ] ) );
+            $operator = preg_replace( "/[^><=]/", "", $module[ 'data' ][ 'minimum_php' ] );
+            if( empty( $operator ) ) {
+              $operator = '>=';
             }
-            /** Validate module */
-            if( !$this->validateModule( $name ) ) {
-              $this->disableModule( $name );
-              continue;
-            }
-            /** Maybe check required minimum PHP version */
-            if( !empty( $module[ 'data' ][ 'minimum_php' ] ) ) {
-              $requiredPhpVersion = floatval( preg_replace( "/[^-0-9\.]/", "", $module[ 'data' ][ 'minimum_php' ] ) );
-              $operator = preg_replace( "/[^><=]/", "", $module[ 'data' ][ 'minimum_php' ] );
-              if( empty( $operator ) ) {
-                $operator = '>=';
-              }
-              if( $requiredPhpVersion > 0 ) {
-                if( !version_compare( phpversion(), $requiredPhpVersion, $operator ) ) {
-                  throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Your PHP version is less than required one.' ), $module[ 'data' ][ 'name' ] ) );
-                }
+            if( $requiredPhpVersion > 0 ) {
+              if( !version_compare( phpversion(), $requiredPhpVersion, $operator ) ) {
+                throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Your PHP version is less than required one.' ), $module[ 'data' ][ 'title' ] ) );
               }
             }
-            /** Now try to activate and init module */
-            if( empty( $module[ 'data' ][ 'classmap' ] ) ) {
-              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Missed classmap parameter.' ), $module[ 'data' ][ 'name' ] ) );
-            }
-            $classFile = $module[ 'path' ] . '/' . ltrim( $module[ 'data' ][ 'classmap' ], '/' );
-            if( !file_exists( $classFile ) ) {
-              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap file does not exist.' ), $module[ 'data' ][ 'name' ] ) );
-            }
-            /** Determine if class exists and include it if it does not. */
+          }
+          /** Now try to activate and init module */
+          if( empty( $module[ 'data' ][ 'classmap' ] ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Missed classmap parameter.' ), $module[ 'data' ][ 'title' ] ) );
+          }
+          $classFile = $module[ 'path' ] . '/' . ltrim( $module[ 'data' ][ 'classmap' ], '/' );
+          if( !file_exists( $classFile ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap file does not exist.' ), $module[ 'data' ][ 'title' ] ) );
+          }
+          /** Determine if class exists and include it if it does not. */
+          if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
+            include_once( $classFile );
             if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
-              include_once( $classFile );
-              if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap class does not exist.' ), $module[ 'data' ][ 'name' ] ) );
-              }
+              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap class does not exist.' ), $module[ 'data' ][ 'title' ] ) );
             }
-            /** Activate module and add it to the list of activated modules. */
-            new $module[ 'data' ][ 'bootstrap' ];
-            array_push( $this->modules[ 'activated' ], $name );
           }
+          /** Activate module and add it to the list of activated modules. */
+          new $module[ 'data' ][ 'bootstrap' ];
+          array_push( $this->modules[ 'activated' ], $_module );
         } catch ( \Exception $e ) {
           /** @todo: add error handler!!! */
           return new \WP_Error( 'lib-module-failure', $e->getMessage() );
@@ -262,12 +262,23 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function enableModule( $module ) {
-        $data = $this->_getEnabledModules();
-        if( !in_array( $module, $data ) ) {
-          array_push( $data, $module );
-          // Update our enabled modules.
-          $this->modules[ 'enabled' ] = $data;
-          return update_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', $data );
+        try {
+          if( !$this->getModules( "installed.{$module}" ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be enabled because it is not installed.' ), $module ) );
+          }
+          $data = $this->_getEnabledModules();
+          if( !in_array( $module, $data ) ) {
+            array_push( $data, $module );
+            $r = update_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', $data );
+            if( !$r ) {
+              throw new \Exception( sprintf( __( 'Module \'%1s\' could not be enabled because of error on trying to update \'%2s\' option.' ), $module, 'ud:module:' . sanitize_key( $this->system ) . ':enabled' ) );
+            }
+            // Update our enabled modules.
+            $this->modules[ 'enabled' ] = $data;
+          }
+        } catch ( \Exception $e ) {
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return true;
       }
@@ -277,13 +288,21 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function disableModule( $module ) {
-        $data = $this->_getEnabledModules();
-        $pos = array_search( $module, $data );
-        if( $pos !== false && isset( $data[ $pos ] ) ) {
-          unset( $data[ $pos ] );
-          // Update our enabled modules.
-          $this->modules[ 'enabled' ] = $data;
-          return update_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', $data );
+        try {
+          $data = $this->_getEnabledModules();
+          $pos = array_search( $module, $data );
+          if( $pos !== false && isset( $data[ $pos ] ) ) {
+            unset( $data[ $pos ] );
+            $r = update_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', $data );
+            if( !$r ) {
+              throw new \Exception( sprintf( __( 'Module \'%1s\' could not be disabled because of error on trying to update \'%2s\' option.' ), $module, 'ud:module:' . sanitize_key( $this->system ) . ':enabled' ) );
+            }
+            // Update our enabled modules.
+            $this->modules[ 'enabled' ] = $data;
+          }
+        } catch ( \Exception $e ) {
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return true;
       }
@@ -293,22 +312,24 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function upgradeModule( $module ) {
-        /** Be sure that module is not installed. */
-        if( !$_module = $this->getModules( "installed.{$module}", false ) ) {
-          throw new \Exception( sprintf( __( 'Module \'%s\' can not be upgraded because it is not installed.' ), $module ) );
+        try {
+          /** Be sure that module is not installed. */
+          if( !$_module = $this->getModules( "installed.{$module}", false ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' can not be upgraded because it is not installed.' ), $module ) );
+          }
+          /** Be sure that available module's version is higher then existing one */
+          if( version_compare( $_module[ 'data' ][ 'version' ], $this->getModules( "available.{$module}.data.version" ) ) >= 0 ) {
+            throw new \Exception( sprintf( __( 'The current Module \'%s\' version is the latest.' ), $module ) );
+          }
+          $this->loadModule( $module, array(
+            'abort_if_destination_exists' => false,
+            'clear_destination'           => true,
+          ) );
+        } catch ( \Exception $e ) {
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
-        /** Be sure that available module's version is higher then existing one */
-        if( version_compare( $_module[ 'data' ][ 'version' ], $this->getModules( "available.{$module}.data.version" ) ) >= 0 ) {
-          throw new \Exception( sprintf( __( 'The current Module \'%s\' version is the latest.' ), $module ) );
-        }
-        $r = $this->loadModule( $module, array(
-          'abort_if_destination_exists' => false,
-          'clear_destination'           => true,
-        ) );
-        if( $r ) {
-          $this->resetTransient();
-        }
-        return $r;
+        return true;
       }
       
       /**
@@ -316,18 +337,20 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function installModule( $module ) {
-        /** Be sure that module is not installed. */
-        if( $this->getModules( "installed.{$module}" ) ) {
-          throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
+        try {
+          /** Be sure that module is not installed. */
+          if( $this->getModules( "installed.{$module}" ) ) {
+            throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
+          }
+          $this->loadModule( $module, array(
+            'abort_if_destination_exists' => true,
+            'clear_destination'           => false,
+          ) );
+        } catch ( \Exception $e ) {
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
-        $r = $this->loadModule( $module, array(
-          'abort_if_destination_exists' => true,
-          'clear_destination'           => false,
-        ) );
-        if( $r ) {
-          $this->resetTransient();
-        }
-        return $r;
+        return true;
       }
       
       /**
@@ -339,75 +362,69 @@ namespace UsabilityDynamics\Module {
        * @author peshkov@UD
        */
       private function loadModule( $module, $args = array() ) {
-        try {
-          $args = wp_parse_args( $args, array( 
-            'abort_if_destination_exists' => false,
-            'clear_destination'           => true,
-          ) );
-          $_module = $this->getModules( "available.{$module}" );
-          /** Be sure we have information about module */
-          if( empty( $_module[ 'data' ] ) ) {
-            throw new \Exception( sprintf( __( 'Module \'%s\' is not available. Check if module can be installed on current domain.' ), $module ) );
-          }
-          $data = $_module[ 'data' ];
-          /** Init some required vars */
-          $sourceUrl = !empty( $_module[ 'path' ] ) ? $_module[ 'path' ] : false;
-          $moduleDir = !empty( $data[ 'installer_name' ] ) ? $data[ 'installer_name' ] : sanitize_key( $module );
-          $destDir   = $this->path . '/' . $moduleDir;
-          if( !is_dir( $this->path ) ) {
-            /** Looks like required destination directory doesn't exist. Let's try to create it. */
-            if( !wp_mkdir_p( $this->path ) ) {
-              throw new \Exception( sprintf( __( 'Destination directory ( %s ) for module does not exist and can not be created. Please check file permissions.' ), $this->path ) );
-            }
-          }
-          /** Be sure we have source URL for getting module */
-          if( !$sourceUrl ) {
-            throw new \Exception( sprintf( __( 'Something went wrong. Module \'%s\' source is not available.' ), $module ) );
-          }
-          /**
-           * Initialize Upgrader
-           *
-           * @see http://xref.wordpress.org/branches/3.6/WordPress/Upgrader/WP_Upgrader.html
-           */
-          $upgrader = Upgrader_Loader::call();
-          $upgrader->init();
-          /** Be sure upgrader is inited */
-          if( !$upgrader ) {
-            throw new \Exception( sprintf( __( 'Something went wrong. Install could not be run. Module \'%s\' is not installed.' ), $module ) );
-          }
-          /** Be sure we can connect to file system to upload module. */
-          if( is_wp_error( $upgrader->fs_connect( array( $destDir ) ) ) ) {
-            throw new \Exception( sprintf( __( 'Install could not be run. Unable to connect to file system. Module \'%s\' is not installed' ), $module ) );
-          };
-          /** Load and unpack module to temp directory. */
-          $package = $upgrader->download_package( $_module[ 'path' ] );
-          if( is_wp_error( $package ) ) {
-            throw new \Exception( sprintf( __( 'Install failed. Unable to download module \'%s\'.' ), $module ) );
-          }
-          $source = $upgrader->unpack_package( $package );
-          if( is_wp_error( $source ) ) {
-            throw new \Exception( sprintf( __( 'Install failed. Unable to unpack module \'%s\'.' ), $module ) );
-          }
-          /** Try to install module */
-          $result = $upgrader->install_package( array(
-            'source'                      => $source,
-            'destination'                 => $destDir,
-            'abort_if_destination_exists' => $args[ 'abort_if_destination_exists' ],
-            'clear_destination'           => $args[ 'clear_destination' ],
-            'hook_extra'                  => array(
-              'module'  => $module,
-              'manager' => $this,
-            ),
-          ) );
-          if( is_wp_error( $result ) ) {
-            throw new \Exception( sprintf( __( 'Install failed. Unable to install module \'%s\' to file system.' ), $module ) );
-          }
-          //echo "<pre>"; print_r( $result ); echo "</pre>";die();
-        } catch ( \Exception $e ) {
-          /** @todo: add error handler!!! */
-          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
+        $args = wp_parse_args( $args, array( 
+          'abort_if_destination_exists' => false,
+          'clear_destination'           => true,
+        ) );
+        $_module = $this->getModules( "available.{$module}" );
+        /** Be sure we have information about module */
+        if( empty( $_module[ 'data' ] ) ) {
+          throw new \Exception( sprintf( __( 'Module \'%s\' is not available. Check if module can be installed on current domain.' ), $module ) );
         }
-
+        $data = $_module[ 'data' ];
+        /** Init some required vars */
+        $sourceUrl = !empty( $_module[ 'path' ] ) ? $_module[ 'path' ] : false;
+        $moduleDir = !empty( $data[ 'installer_name' ] ) ? $data[ 'installer_name' ] : sanitize_key( $module );
+        $destDir   = $this->path . '/' . $moduleDir;
+        if( !is_dir( $this->path ) ) {
+          /** Looks like required destination directory doesn't exist. Let's try to create it. */
+          if( !wp_mkdir_p( $this->path ) ) {
+            throw new \Exception( sprintf( __( 'Destination directory ( %s ) for module does not exist and can not be created. Please check file permissions.' ), $this->path ) );
+          }
+        }
+        /** Be sure we have source URL for getting module */
+        if( !$sourceUrl ) {
+          throw new \Exception( sprintf( __( 'Something went wrong. Module \'%s\' source is not available.' ), $module ) );
+        }
+        /**
+         * Initialize Upgrader
+         *
+         * @see http://xref.wordpress.org/branches/3.6/WordPress/Upgrader/WP_Upgrader.html
+         */
+        $upgrader = Upgrader_Loader::call();
+        $upgrader->init();
+        /** Be sure upgrader is inited */
+        if( !$upgrader ) {
+          throw new \Exception( sprintf( __( 'Something went wrong. Install could not be run. Module \'%s\' is not installed.' ), $module ) );
+        }
+        /** Be sure we can connect to file system to upload module. */
+        if( is_wp_error( $upgrader->fs_connect( array( $destDir ) ) ) ) {
+          throw new \Exception( sprintf( __( 'Install could not be run. Unable to connect to file system. Module \'%s\' is not installed' ), $module ) );
+        };
+        /** Load and unpack module to temp directory. */
+        $package = $upgrader->download_package( $_module[ 'path' ] );
+        if( is_wp_error( $package ) ) {
+          throw new \Exception( sprintf( __( 'Install failed. Unable to download module \'%s\'.' ), $module ) );
+        }
+        $source = $upgrader->unpack_package( $package );
+        if( is_wp_error( $source ) ) {
+          throw new \Exception( sprintf( __( 'Install failed. Unable to unpack module \'%s\'.' ), $module ) );
+        }
+        /** Try to install module */
+        $result = $upgrader->install_package( array(
+          'source'                      => $source,
+          'destination'                 => $destDir,
+          'abort_if_destination_exists' => $args[ 'abort_if_destination_exists' ],
+          'clear_destination'           => $args[ 'clear_destination' ],
+          'hook_extra'                  => array(
+            'module'  => $module,
+            'manager' => $this,
+          ),
+        ) );
+        if( is_wp_error( $result ) ) {
+          throw new \Exception( sprintf( __( 'Install failed. Unable to install module \'%s\' to file system.' ), $module ) );
+        }
+        //echo "<pre>"; print_r( $result ); echo "</pre>";die();
         return true;
       }
 
