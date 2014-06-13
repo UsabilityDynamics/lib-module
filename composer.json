@@ -36,7 +36,8 @@
     "phpmd/phpmd": "master",
     "phpunit/phpunit": "master",
     "squizlabs/php_codesniffer": "master",
-    "sebastian/phpcpd": "master"
+    "sebastian/phpcpd": "master",
+    "usabilitydynamics/lib-wp-phpunit": "master"
   },
   "extra": {
     "component": {}
