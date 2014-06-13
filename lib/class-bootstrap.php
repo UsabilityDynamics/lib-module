@@ -118,7 +118,7 @@ namespace UsabilityDynamics\Module {
        * @return bool
        * @author peshkov@UD
        */
-      public function enableModules( $modules ) {
+      public function enableModules( $modules = array() ) {
         try {
           if( is_string( $modules ) ) {
             $modules = array( $modules );
@@ -137,9 +137,8 @@ namespace UsabilityDynamics\Module {
             throw new \Exception( __( 'Something went wrong. Could not enable module(s).' ) );
           }
         } catch ( \Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-          return false;
+          /** @todo: add error handler */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return true;
       }
@@ -154,7 +153,7 @@ namespace UsabilityDynamics\Module {
        * @return bool
        * @author peshkov@UD
        */
-      public function disableModules( $modules ) {
+      public function disableModules( $modules = array() ) {
         try {
           if( is_string( $modules ) ) {
             $modules = array( $modules );
@@ -173,9 +172,8 @@ namespace UsabilityDynamics\Module {
             throw new \Exception( __( 'Something went wrong. Could not disable module(s).' ) );
           }
         } catch ( \Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-          return false;
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return true;
       }
@@ -196,7 +194,7 @@ namespace UsabilityDynamics\Module {
        * 
        * @author peshkov@UD
        */
-      public function loadModules( $modules ) {
+      public function loadModules( $modules = array() ) {
         try {
           if( is_string( $modules ) ) {
             $modules = array( $modules );
@@ -221,9 +219,8 @@ namespace UsabilityDynamics\Module {
             }
           }
         } catch ( \Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-          return false;
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return true;
       }
@@ -269,7 +266,7 @@ namespace UsabilityDynamics\Module {
             }
             if( empty( $transient ) ) {
               /** Maybe Install/Upgrade all Modules */
-              //$this->loadModules( array_keys( $this->getModules( 'available' ) ) );
+              $this->loadModules( array_keys( $this->getModules( 'available' ) ) );
               /** Maybe Enable All Installed Modules */
               $this->enableModules( array_keys( $this->getModules( 'installed' ) ) );
             }

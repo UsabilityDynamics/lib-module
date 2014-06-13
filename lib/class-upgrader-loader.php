@@ -57,8 +57,8 @@ namespace UsabilityDynamics\Module {
           include_once( wp_normalize_path( ABSPATH ) . 'wp-admin/includes/file.php' );
           $instance = new Upgrader( new Upgrader_Skin() );
         } catch ( Exception $e ) {
-          /** @todo Add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return $instance;
       }

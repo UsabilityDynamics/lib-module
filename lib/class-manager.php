@@ -61,8 +61,8 @@ namespace UsabilityDynamics\Module {
        * @type array
        */
       private $transients = array(
-        'ud:module:_getInstalledModules',
-        'ud:module:_getAvailableModules',
+        'ud:module:get_installed_modules',
+        'ud:module:get_available_modules',
       );
 
       /**
@@ -187,7 +187,10 @@ namespace UsabilityDynamics\Module {
        */
       public function activateModules() {
         try {
-          $enabledModules = get_option( 'ud:module:' . $this->system . ':enabled' );
+          $enabledModules = get_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', array() );
+          if( !is_array( $enabledModules ) ) {
+            throw new \Exception( __( 'Modules can not be activated because of incorrect Enabled Modules data storing.' ) );
+          }
           foreach( $this->getModules( 'installed' ) as $name => $module ) {
             /** Determine if module is enabled */
             if( !in_array( $name, $enabledModules ) ) {
@@ -231,9 +234,8 @@ namespace UsabilityDynamics\Module {
             array_push( $this->modules[ 'activated' ], $name );
           }
         } catch ( \Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-          return false;
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
         return true;
       }
@@ -243,8 +245,8 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function enableModule( $module ) {
-        $optName = 'ud:module:' . $this->system . ':enabled';
-        $data    = get_option( $optName, array() );
+        $optName = 'ud:module:' . sanitize_key( $this->system ) . ':enabled';
+        $data = get_option( $optName, array() );
         $data = is_array( $data ) ? $data : array();
         if( !in_array( $module, $data ) ) {
           array_push( $data, $module );
@@ -258,8 +260,9 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function disableModule( $module ) {
-        $optName = 'ud:module:' . $this->system . ':enabled';
-        $data    = get_option( $optName, array() );
+        $optName = 'ud:module:' . sanitize_key( $this->system ) . ':enabled';
+        $data = get_option( $optName, array() );
+        $data = is_array( $data ) ? $data : array();
         $pos = array_search( $module, $data );
         if( $pos && isset( $data[ $pos ] ) ) {
           unset( $data[ $pos ] );
@@ -384,10 +387,8 @@ namespace UsabilityDynamics\Module {
           }
           //echo "<pre>"; print_r( $result ); echo "</pre>";die();
         } catch ( \Exception $e ) {
-          /** @todo: add error handler instead of wp_die!!! */
-          wp_die( $e->getMessage() );
-
-          return false;
+          /** @todo: add error handler!!! */
+          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
         }
 
         return true;
@@ -405,7 +406,7 @@ namespace UsabilityDynamics\Module {
         $modules = array();
         /** Maybe get cache */
         if( $this->cache ) {
-          $modules = get_transient( 'ud:module:_getInstalledModules' );
+          $modules = get_transient( 'ud:module:get_installed_modules' );
         }
         /** If there is no cache, parse modules directory. In other case, just return cache. */
         if( !empty( $modules ) ) {
@@ -433,7 +434,7 @@ namespace UsabilityDynamics\Module {
           if( !empty( $modules ) ) {
             $this->resetTransient();
             /** Cache our result for day. */
-            set_transient( 'ud:module:_getInstalledModules', json_encode( $modules ), ( 60 * 60 * 24 ) );
+            set_transient( 'ud:module:get_installed_modules', json_encode( $modules ), ( 60 * 60 * 24 ) );
           }
         }
 
@@ -449,7 +450,7 @@ namespace UsabilityDynamics\Module {
         $response = array();
         /** Maybe get cache */
         if( $this->cache ) {
-          $response = get_transient( 'ud:module:_getAvailableModules' );
+          $response = get_transient( 'ud:module:get_available_modules' );
         }
         /** If there is no cache, do request to server. In other case, just return cache. */
         if( !empty( $response ) ) {
@@ -482,7 +483,7 @@ namespace UsabilityDynamics\Module {
           if( !empty( $response ) ) {
             $this->resetTransient();
             /** Cache our response per day. */
-            set_transient( 'ud:module:_getAvailableModules', json_encode( $response ), ( 60 * 60 * 24 ) );
+            set_transient( 'ud:module:get_available_modules', json_encode( $response ), ( 60 * 60 * 24 ) );
           }
         }
 
