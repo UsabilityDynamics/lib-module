@@ -82,6 +82,7 @@ namespace UsabilityDynamics\Module {
       private $modules = array(
         'installed' => array(),
         'available' => array(),
+        'enabled'   => array(),
         'activated' => array(),
       );
 
@@ -100,6 +101,8 @@ namespace UsabilityDynamics\Module {
         /** Set the list of available and installed modules */
         $this->modules[ 'installed' ] = $this->_getInstalledModules();
         $this->modules[ 'available' ] = $this->_getAvailableModules();
+        /** Set the list of enabled modules */
+        $this->modules[ 'enabled' ] = $this->_getEnabledModules();
         
         /** Maybe Add specific transients to transients list. Needed for resetTransient() functionality. */
         foreach( $this->modules[ 'installed' ] as $k => $m ) {
@@ -185,13 +188,27 @@ namespace UsabilityDynamics\Module {
        *
        * @author peshkov@UD
        */
-      public function activateModules() {
+      public function activateModules( $modules = null ) {
         try {
           $enabledModules = get_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', array() );
           if( !is_array( $enabledModules ) ) {
             throw new \Exception( __( 'Modules can not be activated because of incorrect Enabled Modules data storing.' ) );
           }
-          foreach( $this->getModules( 'installed' ) as $name => $module ) {
+          $installed = $this->getModules( 'installed' );
+          /** Determine if we should activate specific modules manually */
+          if( !empty( $modules ) ) {
+            $_modules = is_string( $modules ) ? array( $modules ) : $modules;
+            $_modules = is_array( $_modules ) ? $_modules : array();
+            $modules = array();
+            foreach( $_modules as $k => $m ) {
+              if( key_exists( $m, $installed ) ) {
+                $modules[ $m ] = $installed[ $m ];
+              }
+            }
+          } else {
+            $modules = $installed;
+          }
+          foreach( $modules as $name => $module ) {
             /** Determine if module is enabled */
             if( !in_array( $name, $enabledModules ) ) {
               continue;
@@ -245,12 +262,12 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function enableModule( $module ) {
-        $optName = 'ud:module:' . sanitize_key( $this->system ) . ':enabled';
-        $data = get_option( $optName, array() );
-        $data = is_array( $data ) ? $data : array();
+        $data = $this->_getEnabledModules();
         if( !in_array( $module, $data ) ) {
           array_push( $data, $module );
-          return update_option( $optName, $data );
+          // Update our enabled modules.
+          $this->modules[ 'enabled' ] = $data;
+          return update_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', $data );
         }
         return true;
       }
@@ -260,13 +277,13 @@ namespace UsabilityDynamics\Module {
        *
        */
       public function disableModule( $module ) {
-        $optName = 'ud:module:' . sanitize_key( $this->system ) . ':enabled';
-        $data = get_option( $optName, array() );
-        $data = is_array( $data ) ? $data : array();
+        $data = $this->_getEnabledModules();
         $pos = array_search( $module, $data );
-        if( $pos && isset( $data[ $pos ] ) ) {
+        if( $pos !== false && isset( $data[ $pos ] ) ) {
           unset( $data[ $pos ] );
-          return update_option( $optName, $data );
+          // Update our enabled modules.
+          $this->modules[ 'enabled' ] = $data;
+          return update_option( 'ud:module:' . sanitize_key( $this->system ) . ':enabled', $data );
         }
         return true;
       }
@@ -488,6 +505,17 @@ namespace UsabilityDynamics\Module {
         }
 
         return $response;
+      }
+      
+      /**
+       * Returns the list of enabled modules
+       *
+       */
+      private function _getEnabledModules() {
+        $optName = 'ud:module:' . sanitize_key( $this->system ) . ':enabled';
+        $data = get_option( $optName, array() );
+        $data = is_array( $data ) ? $data : array();
+        return $data;
       }
 
       /**

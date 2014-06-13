@@ -184,8 +184,8 @@ namespace UsabilityDynamics\Module {
        *
        * @author peshkov@UD
        */
-      public function activateModules() {
-        return $this->manager->activateModules();
+      public function activateModules( $modules = null ) {
+        return $this->manager->activateModules( $modules );
       }
       
       /**
