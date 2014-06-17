@@ -58,7 +58,7 @@ namespace UsabilityDynamics\Module {
         if( null === self::$instance ) {
           self::$instance = new self();
         }
-        return self::$instance->core;
+        return self::$instance;
       }
       
       /**
