@@ -16,7 +16,6 @@ module.exports = function build( grunt ) {
     composer: findup( 'composer.json' ),
     phpcs: findup( 'vendor/bin/phpcs' ) || findup( 'phpcs', { cwd: '/usr/bin' } ),
     vendor: findup( 'vendor' ),
-    phpTests: findup( 'static/tests/phpunit' ),
     jsTests: findup( 'static/tests/mocha' )
   };
 
@@ -46,13 +45,17 @@ module.exports = function build( grunt ) {
       }
     },
 
+    /**
+     * Runs PHPUnit Tests
+     *
+     */
     phpunit: {
       classes: {
-        dir: joinPath( _paths.phpTests, '*.php' )
+        dir: './static/tests/phpunit/classes/'
       },
       options: {
-        bin: 'phpunit',
-        bootstrap: _paths.autoload,
+        bin: 'vendor/bin/phpunit',
+        bootstrap: 'static/tests/phpunit/bootstrap.php',
         colors: true
       }
     },
