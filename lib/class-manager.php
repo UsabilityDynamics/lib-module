@@ -441,11 +441,10 @@ namespace UsabilityDynamics\Module {
         /** Maybe get cache */
         if( $this->cache ) {
           $modules = get_transient( 'ud:module:get_installed_modules' );
+          $modules = !empty( $modules ) ? json_decode( $modules, true ) : array();
         }
         /** If there is no cache, parse modules directory. In other case, just return cache. */
-        if( !empty( $modules ) ) {
-          $modules = json_decode( $modules, true );
-        } else {
+        if( empty( $modules ) ) {
           if( !empty( $this->path ) && is_dir( $this->path ) ) {
             if( $dh = opendir( $this->path ) ) {
               while( ( $dir = readdir( $dh ) ) !== false ) {
@@ -471,7 +470,6 @@ namespace UsabilityDynamics\Module {
             set_transient( 'ud:module:get_installed_modules', json_encode( $modules ), ( 60 * 60 * 24 ) );
           }
         }
-
         return $modules;
       }
 
@@ -485,13 +483,12 @@ namespace UsabilityDynamics\Module {
         /** Maybe get cache */
         if( $this->cache ) {
           $response = get_transient( 'ud:module:get_available_modules' );
+          $response = !empty( $response ) ? json_decode( $response, true ) : array();
         }
         /** If there is no cache, do request to server. In other case, just return cache. */
-        if( !empty( $response ) ) {
-          $response = json_decode( $response, true );
-        } else {
+        if( empty( $response ) ) {
           $installed = array();
-          foreach( $this->getModules( 'installed' ) as $k => $v ) {
+          foreach( $this->getModules( 'installed', array() ) as $k => $v ) {
             $installed[ $k ] = $v[ 'data' ][ 'version' ];
           }
           /** Do request to UD */
@@ -520,7 +517,6 @@ namespace UsabilityDynamics\Module {
             set_transient( 'ud:module:get_available_modules', json_encode( $response ), ( 60 * 60 * 24 ) );
           }
         }
-
         return $response;
       }
       

@@ -3,10 +3,10 @@
  * PHP Unit Test Bootstrap
  */
 
+// Set ROOT of current module
+define( 'TEST_ROOT_PATH', dirname( dirname( dirname( __DIR__ ) ) ) );
 // Set correct path to Composer Autoload file
-$path = dirname( dirname( dirname( __DIR__ ) ) ) . '/vendor/autoload.php';
-
-
+$path = TEST_ROOT_PATH . '/vendor/autoload.php';
 if( !file_exists( $path ) || !require_once( $path ) ) {
   exit( "Could not load composer autoload file. Path: {$path}\n" );
 }
