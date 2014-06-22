@@ -16,7 +16,7 @@ module.exports = function build( grunt ) {
     composer: findup( 'composer.json' ),
     phpcs: findup( 'vendor/bin/phpcs' ) || findup( 'phpcs', { cwd: '/usr/bin' } ),
     vendor: findup( 'vendor' ),
-    jsTests: findup( 'static/tests/mocha' )
+    jsTests: findup( 'test' )
   };
 
   // Automatically Load Tasks.
@@ -27,7 +27,25 @@ module.exports = function build( grunt ) {
   });
 
   grunt.initConfig( {
-
+    
+    // Sets Grunt config settings accessible via grunt.config.get('concatOptions') or <%= grunt.config.get("concatOptions").banner %>
+    config: {
+      staging: {
+        options: {
+          variables: {
+            'environment': 'staging'
+          }
+        }
+      },
+      production: {
+        options: {
+          variables: {
+            'environment': 'production'
+          }
+        }
+      }
+    },
+    
     // Read Composer File.
     composer: grunt.file.readJSON( 'composer.json' ),
 
@@ -51,11 +69,11 @@ module.exports = function build( grunt ) {
      */
     phpunit: {
       classes: {
-        dir: './static/tests/phpunit/classes/'
+        dir: './test/classes/'
       },
       options: {
         bin: 'vendor/bin/phpunit',
-        bootstrap: 'static/tests/phpunit/bootstrap.php',
+        bootstrap: 'test/bootstrap.php',
         colors: true
       }
     },
@@ -159,7 +177,7 @@ module.exports = function build( grunt ) {
         ui: 'exports'
       },
       basic: {
-        src: [ 'static/tests/mocha/*.js' ]
+        src: [ 'test/mocha/*.js' ]
       }
     }
 

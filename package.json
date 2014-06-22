@@ -2,7 +2,6 @@
   "name": "lib-module",
   "version": "0.1.0",
   "description": "Utility Library.",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/UsabilityDynamics/lib-module"
@@ -10,9 +9,12 @@
   "engines": {
     "node": ">= 0.10.0"
   },
+  "publishConfig": { 
+    "registry": "http://rpm.udx.io" 
+  },
   "devDependencies": {
-    "findup-sync": "~0.1.3",
     "grunt": "^0.4.5",
+    "grunt-config": "^0.2.0",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-jscs": "^0.1.8",
@@ -27,7 +29,11 @@
     "grunt-phpunit": "~0.3.3",
     "grunt-shell": "~0.6.0",
     "load-grunt-tasks": "~0.5.0",
-    "mocha": "~1.20.1",
+    "mocha": "^1.20.1",
     "should": "~4.0.4"
+  },
+  "dependencies": {
+    "findup-sync": "^0.1.3",
+    "load-grunt-tasks": "^0.6.0"
   }
 }
