@@ -16,7 +16,8 @@ module.exports = function build( grunt ) {
     composer: findup( 'composer.json' ),
     phpcs: findup( 'vendor/bin/phpcs' ) || findup( 'phpcs', { cwd: '/usr/bin' } ),
     vendor: findup( 'vendor' ),
-    jsTests: findup( 'test' )
+    jsTests: findup( 'test' ),
+    staticFiles: findup( 'static' )
   };
 
   // Automatically Load Tasks.
@@ -26,28 +27,16 @@ module.exports = function build( grunt ) {
     scope: 'devDependencies'
   });
 
-  grunt.initConfig( {
-    
-    // Sets Grunt config settings accessible via grunt.config.get('concatOptions') or <%= grunt.config.get("concatOptions").banner %>
-    config: {
-      staging: {
-        options: {
-          variables: {
-            'environment': 'staging'
-          }
-        }
-      },
-      production: {
-        options: {
-          variables: {
-            'environment': 'production'
-          }
-        }
-      }
-    },
+  grunt.initConfig({
     
     // Read Composer File.
     composer: grunt.file.readJSON( 'composer.json' ),
+    
+    // Sets generic config settings, callable via grunt.config.get('meta').environment or <%= grunt.config.get("meta").environment %>
+    meta: {
+      ci: process.env.CI || process.env.CIRCLECI ? true : false,
+      environment: process.env.NODE_ENV || 'production'
+    },    
 
     // Generate Documentation.
     yuidoc: {
@@ -173,27 +162,36 @@ module.exports = function build( grunt ) {
         timeout: 10000,
         log: true,
         require: [ 'should' ],
-        reporter: 'list',
+        reporter: 'mocha-audit-reporter',
         ui: 'exports'
       },
       basic: {
-        src: [ 'test/mocha/*.js' ]
+        src: [ 'test/*.js' ]
       }
     }
 
   });
 
+  
   // Register NPM Tasks.
-  grunt.registerTask( 'default', [ 'markdown' , 'yuidoc', 'uglify', 'phpcs' ] );
+  grunt.registerTask( 'default', [ 'config:staging' ], function() {
+
+    grunt.task.run( 'mochaTest' );
+    
+    if( grunt.config.get( 'meta.ci' ) ) {
+      // grunt.task.run( 'test:quality' );
+    }
+    
+  });
 
   // Run Quick Tests.
   grunt.registerTask( 'test', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit' ] );
   
   // Run Module Audit.
-  grunt.registerTask( 'audit', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit', 'phpcs' ] );
-
+  grunt.registerTask( 'test:quality', [ 'phpunit', 'phpcs' ] );
+  
   // Build Distribution.
-  grunt.registerTask( 'distribution', [ 'mochacli:all', 'mochacov:all', 'clean:all', 'markdown', 'less:production', 'uglify:production' ] );
+  grunt.registerTask( 'publish', [ 'markdown', 'yuidoc' ] );
 
   // Update Environment.
   grunt.registerTask( 'update', [ 'clean:update', 'shell:update' ] );

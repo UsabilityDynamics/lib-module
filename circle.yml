@@ -1,8 +1,5 @@
 machine:
 
-  timezone:
-    America/New_York
-
   node:
     version: 0.10.28
 
@@ -11,15 +8,7 @@ machine:
 
   hosts:
     api.usabilitydynamics.com: 127.0.0.1
-    api.ud-dev.com: 127.0.0.1
-
-test:
-  override:
-    - grunt test
-    - grunt audit
-    
-  post:
-    - grunt clean:test
+    www.usabilitydynamics.com: 127.0.0.1
   
 notify:
   webhooks:
