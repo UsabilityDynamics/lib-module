@@ -1,7 +1,7 @@
 <?php
 
 /**  */
-define( 'ABSPATH', TEST_ROOT_PATH . '/vendor/usabilitydynamics/lib-wp-phpunit/wordpress/' );
+define( 'ABSPATH', dirname( dirname( dirname( __FILE__ ) ) ) . '/vendor/usabilitydynamics/lib-wp-phpunit/wordpress/' );
 
 /** */
 define( 'DB_NAME', 'circle_test' );
