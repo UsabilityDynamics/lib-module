@@ -209,17 +209,17 @@ namespace UsabilityDynamics\Module {
           /** Determine if module is installed */
           $module = $this->getModules( "installed.{$_module}" );
           if( !$module ) {
-            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated, because it is not installed.' ), $_module ) );
+            throw new \Exception( __( 'Module is not installed.' ) );
           }
           /** Determine if module is enabled */
           $enabled = $this->_getEnabledModules();
           if( !in_array( $_module, $enabled ) ) {
-            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated, because it is not enabled.' ), $module[ 'data' ][ 'title' ] ) );
+            throw new \Exception( __( 'Module is not enabled.' ) );
           }
           /** Validate module */
           if( !$this->validateModule( $_module ) ) {
             $this->disableModule( $_module );
-            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Check your license.' ), $module[ 'data' ][ 'title' ] ) );
+            throw new \Exception( __( 'Check your license.' ) );
           }
           /** Maybe check required minimum PHP version */
           if( !empty( $module[ 'data' ][ 'minimum_php' ] ) ) {
@@ -230,23 +230,23 @@ namespace UsabilityDynamics\Module {
             }
             if( $requiredPhpVersion > 0 ) {
               if( !version_compare( phpversion(), $requiredPhpVersion, $operator ) ) {
-                throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Your PHP version is less than required one.' ), $module[ 'data' ][ 'title' ] ) );
+                throw new \Exception( __( 'Your PHP version is less than required one.' ) );
               }
             }
           }
           /** Now try to activate and init module */
           if( empty( $module[ 'data' ][ 'classmap' ] ) ) {
-            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Missed classmap parameter.' ), $module[ 'data' ][ 'title' ] ) );
+            throw new \Exception( __( 'Missed classmap parameter.' ) );
           }
           $classFile = $module[ 'path' ] . '/' . ltrim( $module[ 'data' ][ 'classmap' ], '/' );
           if( !file_exists( $classFile ) ) {
-            throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap file does not exist.' ), $module[ 'data' ][ 'title' ] ) );
+            throw new \Exception( __( 'Bootstrap file does not exist.' ) );
           }
           /** Determine if class exists and include it if it does not. */
           if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
             include_once( $classFile );
             if( !class_exists( $module[ 'data' ][ 'bootstrap' ] ) ) {
-              throw new \Exception( sprintf( __( 'Module \'%s\' can not be activated. Bootstrap class does not exist.' ), $module[ 'data' ][ 'title' ] ) );
+              throw new \Exception( __( 'Bootstrap class does not exist.' ) );
             }
           }
           /** Activate module and add it to the list of activated modules. */
@@ -254,7 +254,8 @@ namespace UsabilityDynamics\Module {
           array_push( $this->modules[ 'activated' ], $_module );
         } catch ( \Exception $e ) {
           /** @todo: add error handler!!! */
-          return new \WP_Error( 'lib-module-failure', $e->getMessage() );
+          $msg = sprintf( __( 'Module \'%s\' can not be activated.' ), $_module ) . ' ' . $e->getMessage();
+          return new \WP_Error( 'lib-module-failure', $msg );
         }
         return true;
       }
@@ -536,6 +537,9 @@ namespace UsabilityDynamics\Module {
       /**
        * Returns data.
        *
+       * @param array $data
+       * @param key|string $key
+       * @param mixed $default
        */
       private function _getData( $data, $key = false, $default = false ) {
         /** Return all data. */
@@ -546,9 +550,7 @@ namespace UsabilityDynamics\Module {
         if( strpos( $key, '.' ) ) {
           return $this->_resolveData( $data, $key, $default );
         }
-
         /** Return value or default. */
-
         return isset( $data[ $key ] ) ? $data[ $key ] : $default;
       }
 
@@ -557,10 +559,9 @@ namespace UsabilityDynamics\Module {
        *
        * @source http://stackoverflow.com/questions/14704984/best-way-for-dot-notation-access-to-multidimensional-array-in-php
        *
-       * @param       $a
-       * @param       $path
-       * @param null  $default
-       *
+       * @param array  $a
+       * @param string $path
+       * @param mixed  $default
        * @internal param array $a
        * @return array|null
        */
