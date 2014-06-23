@@ -117,6 +117,8 @@ namespace UsabilityDynamics\Module {
       /**
        * Returns modules data depending on key
        *
+       * @param bool|string $key
+       * @param mixed       $default
        */
       public function getModules( $key = false, $default = false ) {
         return $this->_getData( $this->modules, $key, $default );
@@ -321,7 +323,7 @@ namespace UsabilityDynamics\Module {
           if( version_compare( $_module[ 'data' ][ 'version' ], $this->getModules( "available.{$module}.data.version" ) ) >= 0 ) {
             throw new \Exception( sprintf( __( 'The current Module \'%s\' version is the latest.' ), $module ) );
           }
-          $this->loadModule( $module, array(
+          $this->_loadModule( $module, array(
             'abort_if_destination_exists' => false,
             'clear_destination'           => true,
           ) );
@@ -342,7 +344,7 @@ namespace UsabilityDynamics\Module {
           if( $this->getModules( "installed.{$module}" ) ) {
             throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
           }
-          $this->loadModule( $module, array(
+          $this->_loadModule( $module, array(
             'abort_if_destination_exists' => true,
             'clear_destination'           => false,
           ) );
@@ -361,7 +363,7 @@ namespace UsabilityDynamics\Module {
        * @return bool
        * @author peshkov@UD
        */
-      private function loadModule( $module, $args = array() ) {
+      private function _loadModule( $module, $args = array() ) {
         $args = wp_parse_args( $args, array( 
           'abort_if_destination_exists' => false,
           'clear_destination'           => true,
@@ -586,26 +588,11 @@ namespace UsabilityDynamics\Module {
        */
       private function _prepareModuleData( $data ) {
         /** Try to get Title locale */
-        $title = isset( $data[ 'extra' ][ 'title' ][ get_locale() ] ) ? $data[ 'extra' ][ 'title' ][ get_locale() ] : '';
-        if( empty( $title ) ) {
-          $title = isset( $data[ 'extra' ][ 'title' ][ 'en_US' ] ) ?
-            $data[ 'extra' ][ 'title' ][ 'en_US' ] : ( isset( $data[ 'extra' ][ 'title' ] ) && is_string( $data[ 'extra' ][ 'title' ] ) ?
-              $data[ 'extra' ][ 'title' ] : '' );
-        }
+        $title = $this->_getLocaleValue( 'title', $data );
         /** Try to get Tagline locale */
-        $tagline = isset( $data[ 'extra' ][ 'tagline' ][ get_locale() ] ) ? $data[ 'extra' ][ 'tagline' ][ get_locale() ] : '';
-        if( empty( $tagline ) ) {
-          $tagline = isset( $data[ 'extra' ][ 'tagline' ][ 'en_US' ] ) ?
-            $data[ 'extra' ][ 'tagline' ][ 'en_US' ] : ( isset( $data[ 'extra' ][ 'tagline' ] ) && is_string( $data[ 'extra' ][ 'tagline' ] ) ?
-              $data[ 'extra' ][ 'tagline' ] : '' );
-        }
+        $tagline = $this->_getLocaleValue( 'tagline', $data );
         /** Try to get Description locale */
-        $description = isset( $data[ 'extra' ][ 'description' ][ get_locale() ] ) ? $data[ 'extra' ][ 'description' ][ get_locale() ] : '';
-        if( empty( $description ) ) {
-          $description = isset( $data[ 'extra' ][ 'description' ][ 'en_US' ] ) ?
-            $data[ 'extra' ][ 'description' ][ 'en_US' ] : ( isset( $data[ 'extra' ][ 'description' ] ) && is_string( $data[ 'extra' ][ 'description' ] ) ?
-              $data[ 'extra' ][ 'description' ] : '' );
-        }
+        $description = $this->_getLocaleValue( 'description', $data );
         $module = array(
           'data'   => array(
             // Unique Name
@@ -635,6 +622,27 @@ namespace UsabilityDynamics\Module {
         );
 
         return $module;
+      }
+      
+      /**
+       * Try to get locale value from data
+       *
+       * @param $key Key to find
+       * @param array $data
+       * @return string
+       */
+      private function _getLocaleValue( $key, $data = array() ) {
+        $r = '';
+        if( !is_array( $data ) || !isset( $data[ 'extra' ] ) ) {
+          return $r;
+        }
+        $r = isset( $data[ 'extra' ][ $key ][ get_locale() ] ) ? $data[ 'extra' ][ $key ][ get_locale() ] : '';
+        if( empty( $r ) ) {
+          $r = isset( $data[ 'extra' ][ $key ][ 'en_US' ] ) ?
+            $data[ 'extra' ][ $key ][ 'en_US' ] : ( isset( $data[ 'extra' ][ $key ] ) && is_string( $data[ 'extra' ][ $key ] ) ?
+              $data[ 'extra' ][ $key ] : '' );
+        }
+        return $r;
       }
 
       /**

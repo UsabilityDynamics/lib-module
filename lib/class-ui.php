@@ -54,7 +54,7 @@ namespace UsabilityDynamics\Module {
        *
        * @author peshkov@UD
        */
-      static public function get_instance() {
+      static public function getInstance() {
         if( null === self::$instance ) {
           self::$instance = new self();
         }

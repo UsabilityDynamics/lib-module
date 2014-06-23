@@ -112,52 +112,28 @@ namespace UsabilityDynamics\Module {
        * Enables module or list of modules for current system.
        * Bulk process
        *
-       * @param mixed $modules
+       * @param string|array $modules
        *
        * @throws \Exception
-       * @return bool
+       * @return array
        * @author peshkov@UD
        */
       public function enableModules( $modules = array() ) {
-        $s = array(); // List of successfully enabled modules.
-        if( is_string( $modules ) ) {
-          $modules = array( $modules );
-        }
-        if ( is_array( $modules ) ) {
-          foreach( $modules as $module ) {
-            $r = $this->manager->enableModule( $module );
-            if( !is_wp_error( $r ) ) {
-              array_push( $s, $module );
-            }
-          }
-        }
-        return $s;
+        return $this->_toggleModules( $modules, 'enable' );
       }
 
       /**
        * Disables module or list of modules for current system.
        * Bulk process
        *
-       * @param mixed $modules
+       * @param string|array $modules
        *
        * @throws \Exception
-       * @return bool
+       * @return array
        * @author peshkov@UD
        */
       public function disableModules( $modules = array() ) {
-        $s = array(); // List of successfully disabled modules.
-        if( is_string( $modules ) ) {
-          $modules = array( $modules );
-        }
-        if ( is_array( $modules ) ) {
-          foreach( $modules as $module ) {
-            $r = $this->manager->disableModule( $module );
-            if( !is_wp_error( $r ) ) {
-              array_push( $s, $module );
-            }
-          }
-        }
-        return $s;
+        return $this->_toggleModules( $modules, 'disable' );
       }
       
       /**
@@ -168,7 +144,7 @@ namespace UsabilityDynamics\Module {
        */
       public function activateModules( $modules = null ) {
         $s = array(); // List of successfully activated modules
-        $installed = $this->getModules( 'installed' );
+        $installed = $this->getModules( 'installed', array() );
         /** Determine if we should activate specific modules manually */
         if( !empty( $modules ) ) {
           $modules = is_string( $modules ) ? array( $modules ) : $modules;
@@ -179,7 +155,7 @@ namespace UsabilityDynamics\Module {
             }
           }
         } else {
-          $modules = array_keys( $installed );
+          $modules = array_keys( (array)$installed );
         }
         foreach( $modules as $k => $module ) {
           $r = $this->manager->activateModule( $module );
@@ -206,8 +182,8 @@ namespace UsabilityDynamics\Module {
           $modules = array( $modules );
         }
         if ( is_array( $modules ) ) {
-          $installed = $this->getModules( 'installed' );
-          $available = $this->getModules( 'available' );
+          $installed = $this->getModules( 'installed', array() );
+          $available = $this->getModules( 'available', array() );
           foreach( $modules as $module ) {
             if( !key_exists( $module, $available ) ) {
               continue;
@@ -274,9 +250,9 @@ namespace UsabilityDynamics\Module {
             }
             if( empty( $transient ) ) {
               /** Maybe Install/Upgrade all Modules */
-              $this->loadModules( array_keys( $this->getModules( 'available' ) ) );
+              $this->loadModules( array_keys( (array) $this->getModules( 'available', array() ) ) );
               /** Maybe Enable All Installed Modules */
-              $this->enableModules( array_keys( $this->getModules( 'installed' ) ) );
+              $this->enableModules( array_keys( (array) $this->getModules( 'installed', array() ) ) );
             }
             /** Set TM to call functionality above once per week. */
             set_transient( 'ud:module:mode:automatic', 'true', ( 60 * 60 * 24 * 7 ) );
@@ -294,6 +270,38 @@ namespace UsabilityDynamics\Module {
         
         }
       
+      }
+      
+      /**
+       * Enables/Disabled Modules
+       *
+       * @param array|string $module Slug of module or list of slugs.
+       * @param string $action Values: 'enable', 'disable'.
+       */
+      private function _toggleModules( $modules, $action = false ) {
+        $s = array(); // List of successfully enabled modules.
+        if( !in_array( $action, array( 'enable', 'disable' ) ) ) {
+          return $s;
+        }
+        if( is_string( $modules ) ) {
+          $modules = array( $modules );
+        }
+        if ( is_array( $modules ) ) {
+          foreach( $modules as $module ) {
+            switch( $action ) {
+              case 'enable':
+                $r = $this->manager->enableModule( $module );
+                break;
+              case 'disable':
+                $r = $this->manager->disableModule( $module );
+                break;
+            }
+            if( !is_wp_error( $r ) ) {
+              array_push( $s, $module );
+            }
+          }
+        }
+        return $s;
       }
       
     }
