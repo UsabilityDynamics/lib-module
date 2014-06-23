@@ -1,0 +1,17 @@
+<phpunit backupGlobals="false"
+         backupStaticAttributes="false"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         syntaxCheck="false"
+         bootstrap="../bootstrap-circleci.php"
+>
+    <testsuites>
+        <testsuite name="CircleCI Test Suite">
+            <directory>../classes</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

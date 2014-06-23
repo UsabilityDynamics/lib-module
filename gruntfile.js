@@ -61,9 +61,13 @@ module.exports = function build( grunt ) {
         dir: './test/classes/'
       },
       options: {
-        bin: 'vendor/bin/phpunit',
-        bootstrap: 'test/bootstrap.php',
-        colors: true
+        bin: './vendor/bin/phpunit'
+      },
+      local: {
+        configuration: 'test/config/phpunit-local.xml'
+      },
+      circleci: {
+        configuration: 'test/config/phpunit-circleci.xml'
       }
     },
 
@@ -188,7 +192,7 @@ module.exports = function build( grunt ) {
   grunt.registerTask( 'test', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit' ] );
   
   // Run Module Audit.
-  grunt.registerTask( 'test:quality', [ 'phpunit', 'phpcs' ] );
+  grunt.registerTask( 'test:quality', [ 'phpunit:local', 'phpcs' ] );
   
   // Build Distribution.
   grunt.registerTask( 'publish', [ 'markdown', 'yuidoc' ] );
