@@ -13,7 +13,7 @@ machine:
 database:
 
   override:
-    - mysql -u ubuntu circle_test < test/config/db-setup.sql
+    - mysql -u ubuntu circle_test < ./test/config/db-setup.sql
   
 test:
 
