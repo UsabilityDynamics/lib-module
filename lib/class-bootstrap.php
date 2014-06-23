@@ -288,6 +288,7 @@ namespace UsabilityDynamics\Module {
         }
         if ( is_array( $modules ) ) {
           foreach( $modules as $module ) {
+            $r = false;
             switch( $action ) {
               case 'enable':
                 $r = $this->manager->enableModule( $module );
@@ -296,7 +297,7 @@ namespace UsabilityDynamics\Module {
                 $r = $this->manager->disableModule( $module );
                 break;
             }
-            if( !is_wp_error( $r ) ) {
+            if( $r && !is_wp_error( $r ) ) {
               array_push( $s, $module );
             }
           }

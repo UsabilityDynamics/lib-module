@@ -394,11 +394,11 @@ namespace UsabilityDynamics\Module {
          * @see http://xref.wordpress.org/branches/3.6/WordPress/Upgrader/WP_Upgrader.html
          */
         $upgrader = Upgrader_Loader::call();
-        $upgrader->init();
         /** Be sure upgrader is inited */
-        if( !$upgrader ) {
+        if( !$upgrader || is_wp_error( $upgrader ) ) {
           throw new \Exception( sprintf( __( 'Something went wrong. Install could not be run. Module \'%s\' is not installed.' ), $module ) );
         }
+        $upgrader->init();
         /** Be sure we can connect to file system to upload module. */
         if( is_wp_error( $upgrader->fs_connect( array( $destDir ) ) ) ) {
           throw new \Exception( sprintf( __( 'Install could not be run. Unable to connect to file system. Module \'%s\' is not installed' ), $module ) );
