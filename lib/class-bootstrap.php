@@ -191,12 +191,12 @@ namespace UsabilityDynamics\Module {
             /** Determine if we have to install or upgrade module */
             if( key_exists( $module, $installed ) ) {
               $r = $this->manager->upgradeModule( $module );
-              if( !is_wp_error( $r ) ) {
+              if( $r && !is_wp_error( $r ) ) {
                 array_push( $s[ 'upgraded' ], $module );
               }
             } else {
               $r = $this->manager->installModule( $module );
-              if( !is_wp_error( $r ) ) {
+              if( $r && !is_wp_error( $r ) ) {
                 array_push( $s[ 'installed' ], $module );
               }
             }            

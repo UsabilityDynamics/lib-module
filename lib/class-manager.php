@@ -324,10 +324,12 @@ namespace UsabilityDynamics\Module {
           if( version_compare( $_module[ 'data' ][ 'version' ], $this->getModules( "available.{$module}.data.version" ) ) >= 0 ) {
             throw new \Exception( sprintf( __( 'The current Module \'%s\' version is the latest.' ), $module ) );
           }
-          $this->_loadModule( $module, array(
+          if( !$this->_loadModule( $module, array(
             'abort_if_destination_exists' => false,
             'clear_destination'           => true,
-          ) );
+          ) ) ) {
+            throw new \Exception( sprintf( __( 'Something went wrong. Module \'%s\' can not be upgraded.' ), $module ) );
+          }
         } catch ( \Exception $e ) {
           /** @todo: add error handler!!! */
           return new \WP_Error( 'lib-module-failure', $e->getMessage() );
@@ -345,10 +347,12 @@ namespace UsabilityDynamics\Module {
           if( $this->getModules( "installed.{$module}" ) ) {
             throw new \Exception( sprintf( __( 'Module \'%s\' is already installed.' ), $module ) );
           }
-          $this->_loadModule( $module, array(
+          if( !$this->_loadModule( $module, array(
             'abort_if_destination_exists' => true,
             'clear_destination'           => false,
-          ) );
+          ) ) ) {
+            throw new \Exception( sprintf( __( 'Something went wrong. Module \'%s\' can not be installed.' ), $module ) );
+          }
         } catch ( \Exception $e ) {
           /** @todo: add error handler!!! */
           return new \WP_Error( 'lib-module-failure', $e->getMessage() );
