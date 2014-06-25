@@ -1,0 +1,13 @@
+{
+    "event": "suiteStart",
+    "suite": "test\/classes\/",
+    "tests": 1
+}{
+    "event": "suiteStart",
+    "suite": "BasicTest",
+    "tests": 1
+}{
+    "event": "testStart",
+    "suite": "BasicTest",
+    "test": "BasicTest::testInitModule"
+}

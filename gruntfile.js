@@ -23,8 +23,6 @@ module.exports = function build( grunt ) {
     staticFiles: findup( 'static' )
   };
 
-  console.log( require( 'util' ).inspect( _paths, { showHidden: true, colors: true, depth: 2 } ) )
-
   // Automatically Load Tasks.
   require( 'load-grunt-tasks' )( grunt, {
     pattern: 'grunt-*',
@@ -67,6 +65,9 @@ module.exports = function build( grunt ) {
       },
       options: {
         bin: _paths.bin.phpunit
+        //coverage: true,
+        //logJson: true,
+        //followOutput: false
       },
       local: {
         configuration: 'test/config/phpunit-local.xml'
@@ -80,10 +81,14 @@ module.exports = function build( grunt ) {
       options: {
         bin: _paths.bin.phpcs,
         standard: 'PSR2',
+        ignoreExitCode: true,
         warningSeverity: 1,
-        reportFile: 'static/wiki/PHP-CS.md'
+        report: 'full',
+        reportWidth: 200,
+        reportFile: 'static/wiki/PHP-CS.md',
+        tabWidth: 2
       },
-      application: {
+      report: {
         dir: [ 'lib/*.php' ]
       }
     },
@@ -182,14 +187,14 @@ module.exports = function build( grunt ) {
   });
 
   // Register NPM Tasks.
-  grunt.registerTask( 'default', [ 'config:staging' ], function() {
+  grunt.registerTask( 'default', function() {
 
     grunt.task.run( 'mochaTest' );
-    
+
     if( grunt.config.get( 'meta.ci' ) ) {
       // grunt.task.run( 'test:quality' );
     }
-    
+
   });
 
   // Run Quick Tests.
@@ -199,13 +204,13 @@ module.exports = function build( grunt ) {
     'mochaTest',
     'phpunit'
   ]);
-  
+
   // Run Module Audit.
   grunt.registerTask( 'test:quality', [
     'phpunit:local',
-    'phpcs'
+    'phpcs:report'
   ]);
-  
+
   // Publish Library.
   grunt.registerTask( 'publish', function() {
 

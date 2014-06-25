@@ -4,13 +4,7 @@
 * Enables/disables modules.
 * Activates enabled modules.
 
-## TODO
-* Implement User Interface.
-* Add REST.
-* Add Error Handler.
-* Add Mocha Test.
-
-## Get Started
+## Usage
 
 ### Initialization
 ```php

@@ -6,7 +6,7 @@ echo 'Loading LOCAL environment...';
 // Set ROOT of current module
 define( 'TEST_ROOT_PATH', dirname( __DIR__ ) );
 // Set correct path to Composer Autoload file
-$path = TEST_ROOT_PATH . '/vendor/autoload.php';
+$path = TEST_ROOT_PATH . '/vendor/libraries/autoload.php';
 if( !file_exists( $path ) || !require_once( $path ) ) {
   exit( "Could not load composer autoload file. Path: {$path}\n" );
 }
