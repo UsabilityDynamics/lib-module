@@ -1,5 +1,6 @@
 --require should
 --require mocha-phpunit
 --require mocha-phpcs
+--require mocha-acceptance
 --reporter list
 --ui exports
