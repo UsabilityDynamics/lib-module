@@ -55,44 +55,6 @@ module.exports = function build( grunt ) {
       }
     },
 
-    /**
-     * Runs PHPUnit Tests
-     *
-     */
-    phpunit: {
-      classes: {
-        dir: './test/classes/'
-      },
-      options: {
-        bin: _paths.bin.phpunit
-        //coverage: true,
-        //logJson: true,
-        //followOutput: false
-      },
-      local: {
-        configuration: 'test/config/phpunit-local.xml'
-      },
-      circleci: {
-        configuration: 'test/config/phpunit-circleci.xml'
-      }
-    },
-
-    phpcs: {
-      options: {
-        bin: _paths.bin.phpcs,
-        standard: 'PSR2',
-        ignoreExitCode: true,
-        warningSeverity: 1,
-        report: 'full',
-        reportWidth: 200,
-        reportFile: 'static/wiki/PHP-CS.md',
-        tabWidth: 2
-      },
-      report: {
-        dir: [ 'lib/*.php' ]
-      }
-    },
-
     // Development Watch.
     watch: {
       options: {
@@ -174,13 +136,22 @@ module.exports = function build( grunt ) {
     mochaTest: {
       options: {
         timeout: 10000,
-        log: true,
+        log: false,
         require: [ 'should' ],
         reporter: 'list',
         ui: 'exports'
       },
-      basic: {
-        src: [ 'test/*.js' ]
+      main: {
+        src: [ 'test/lib-module.js' ]
+      },
+      unit: {
+        src: [ 'test/unit-*.js' ]
+      },
+      quality: {
+        src: [ 'test/quality-*.js' ]
+      },
+      acceptance: {
+        src: [ 'test/acceptance/*.js' ]
       }
     }
 
@@ -200,16 +171,15 @@ module.exports = function build( grunt ) {
   // Run Quick Tests.
   grunt.registerTask( 'test', [
     'clean:composer',
-    'shell:install',
-    'mochaTest',
-    'phpunit'
+    'mochaTest:main',
+    'mochaTest:unit'
   ]);
 
-  // Run Module Audit.
-  grunt.registerTask( 'test:quality', [
-    'phpunit:local',
-    'phpcs:report'
-  ]);
+  // Run Acceptance Tests.
+  grunt.registerTask( 'test:acceptance', function() {
+    grunt.task.run( 'clean:composer' );
+    grunt.task.run( 'mochaTest:acceptance' );
+  });
 
   // Publish Library.
   grunt.registerTask( 'publish', function() {

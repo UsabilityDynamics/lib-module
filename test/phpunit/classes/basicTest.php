@@ -1,6 +1,7 @@
 <?php
 /**
  * Class BasicTest
+ *
  */
 class BasicTest extends WP_UnitTestCase {
 
@@ -19,9 +20,10 @@ class BasicTest extends WP_UnitTestCase {
       'version' => '0.1.0',
       'path' => TEST_ROOT_PATH . '/vendor/modules',
       'mode' => 'custom',
-    ) );
+    ));
     
     $this->assertTrue( true );
+
   }
   
 }
