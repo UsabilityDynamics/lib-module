@@ -208,12 +208,12 @@ namespace UsabilityDynamics\Module {
         }
         return $s;
       }
-      
+
       /**
        * Handles some actions
        * Adds automatic processes for different cases ( modes )
        *
-       * @param bool|string $mode Mode ( handler ).
+       * @internal param bool|string $mode Mode ( handler ).
        *
        * @author peshkov@UD
        */

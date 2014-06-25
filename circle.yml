@@ -1,25 +1,18 @@
 machine:
 
-  node:
-    version: 0.10.28
+  node.version: 0.10.28
 
-  php:
-    version: 5.3.3
+  php.version: 5.3.3
 
   hosts:
     api.usabilitydynamics.com: 127.0.0.1
     www.usabilitydynamics.com: 127.0.0.1
 
-database:
-
-  override:
+database.override:
     - mysql -u ubuntu circle_test < ./test/config/db-setup.sql
   
-test:
-
-  override:
+test.override:
     - grunt phpunit:circleci
-    
-notify:
-  webhooks:
+
+notify.webhooks:
     - url: https://api.usabilitydynamics.com/audits/v1/update

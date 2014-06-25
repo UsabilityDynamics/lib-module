@@ -1,6 +1,6 @@
 {
   "name": "lib-module",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Utility Library.",
   "repository": {
     "type": "git",
@@ -10,15 +10,17 @@
     "node": ">= 0.10.0"
   },
   "scripts": {
-    "test": "mocha --ui exports --reporter mocha-audit-reporter",
+    "test": "mocha --ui exports --reporter list",
     "start": "grunt --help",
-    "prepublish": "grunt publish"
+    "install": "grunt install",
+    "publish": "grunt publish",
+    "prepublish": "grunt prepublish"
   },
   "publishConfig": {
     "registry": "http://rpm.udx.io"
   },
   "config": {
-    "audit": {}
+    "acceptance": {}
   },
   "devDependencies": {
     "grunt": "^0.4.5",
@@ -36,10 +38,10 @@
     "grunt-phpcs": "~0.2.2",
     "grunt-phpunit": "~0.3.3",
     "grunt-shell": "~0.6.0",
+    "grunt-scaffold-module": "UsabilityDynamics/grunt-scaffold-module",
+    "grunt-scaffold-library": "UsabilityDynamics/grunt-scaffold-library",
     "mocha": "^1.20.1",
-    "mocha-audit-reporter": "UsabilityDynamics/node-mocha-audit-reporter",
-    "should": "~4.0.4",
-    "yuidocjs": "^0.3.50"
+    "should": "~4.0.4"
   },
   "dependencies": {
     "findup-sync": "^0.1.3",

@@ -14,11 +14,16 @@ module.exports = function build( grunt ) {
   // Determine Paths.
   var _paths = {
     composer: findup( 'composer.json' ),
-    phpcs: findup( 'vendor/bin/phpcs' ) || findup( 'phpcs', { cwd: '/usr/bin' } ),
+    bin: {
+      phpcs: findup( 'vendor/bin/phpcs' ) || findup( 'phpcs', { cwd: '/usr/bin' } ) || findup( 'phpcs', { cwd: '/usr/local/bin' } ),
+      phpunit: findup( 'vendor/bin/phpunit' ) || findup( 'phpunit', { cwd: '/usr/bin' } ) || findup( 'phpunit', { cwd: '/usr/local/bin' } )
+    },
     vendor: findup( 'vendor' ),
     jsTests: findup( 'test' ),
     staticFiles: findup( 'static' )
   };
+
+  console.log( require( 'util' ).inspect( _paths, { showHidden: true, colors: true, depth: 2 } ) )
 
   // Automatically Load Tasks.
   require( 'load-grunt-tasks' )( grunt, {
@@ -61,7 +66,7 @@ module.exports = function build( grunt ) {
         dir: './test/classes/'
       },
       options: {
-        bin: './vendor/bin/phpunit'
+        bin: _paths.bin.phpunit
       },
       local: {
         configuration: 'test/config/phpunit-local.xml'
@@ -73,7 +78,7 @@ module.exports = function build( grunt ) {
 
     phpcs: {
       options: {
-        bin: _paths.phpcs,
+        bin: _paths.bin.phpcs,
         standard: 'PSR2',
         warningSeverity: 1,
         reportFile: 'static/wiki/PHP-CS.md'
@@ -166,7 +171,7 @@ module.exports = function build( grunt ) {
         timeout: 10000,
         log: true,
         require: [ 'should' ],
-        reporter: 'mocha-audit-reporter',
+        reporter: 'list',
         ui: 'exports'
       },
       basic: {
@@ -176,7 +181,6 @@ module.exports = function build( grunt ) {
 
   });
 
-  
   // Register NPM Tasks.
   grunt.registerTask( 'default', [ 'config:staging' ], function() {
 
@@ -189,15 +193,32 @@ module.exports = function build( grunt ) {
   });
 
   // Run Quick Tests.
-  grunt.registerTask( 'test', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit' ] );
+  grunt.registerTask( 'test', [
+    'clean:composer',
+    'shell:install',
+    'mochaTest',
+    'phpunit'
+  ]);
   
   // Run Module Audit.
-  grunt.registerTask( 'test:quality', [ 'phpunit:local', 'phpcs' ] );
+  grunt.registerTask( 'test:quality', [
+    'phpunit:local',
+    'phpcs'
+  ]);
   
-  // Build Distribution.
-  grunt.registerTask( 'publish', [ 'markdown', 'yuidoc' ] );
+  // Publish Library.
+  grunt.registerTask( 'publish', function() {
 
-  // Update Environment.
-  grunt.registerTask( 'update', [ 'clean:update', 'shell:update' ] );
+  });
+
+  // Pre-Publish Library.
+  grunt.registerTask( 'prepublish', function() {
+
+  });
+
+  // Install Library.
+  grunt.registerTask( 'install', function() {
+
+  });
 
 };

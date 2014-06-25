@@ -1,8 +1,3 @@
-Modules Manager
-==========
-
-## Description
-Library handles the following:
 * Checks permissions and returns the list of available modules.
 * Uploads specific modules from remote repository.
 * Upgrades existing modules to the required versions.
@@ -15,7 +10,7 @@ Library handles the following:
 * Add Error Handler.
 * Add Mocha Test.
 
-##Get Started
+## Get Started
 
 ### Initialization
 ```php
