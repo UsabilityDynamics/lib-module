@@ -10,7 +10,7 @@
     "node": ">= 0.10.0"
   },
   "scripts": {
-    "test": "mocha --ui exports --reporter spec",
+    "test": "mocha --ui exports --reporter list",
     "start": "grunt --help",
     "install": "grunt install",
     "publish": "grunt publish",

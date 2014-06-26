@@ -1,5 +1,0 @@
-<?php
-/**
- * Basic Usage
- *
- */

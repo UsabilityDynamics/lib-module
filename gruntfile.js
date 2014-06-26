@@ -169,14 +169,14 @@ module.exports = function build( grunt ) {
   });
 
   // Run Quick Tests.
-  grunt.registerTask( 'test', [
-    'clean:composer',
-    'mochaTest:main',
-    'mochaTest:unit'
-  ]);
+  grunt.registerTask( 'test', 'Essential tests.', function() {
+    grunt.task.run( 'clean:composer' );
+    grunt.task.run( 'mochaTest:main' );
+    grunt.task.run( 'mochaTest:unit' );
+  });
 
   // Run Acceptance Tests.
-  grunt.registerTask( 'test:acceptance', function() {
+  grunt.registerTask( 'acceptance', 'Involved tests.', function() {
     grunt.task.run( 'clean:composer' );
     grunt.task.run( 'mochaTest:acceptance' );
   });
