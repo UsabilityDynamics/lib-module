@@ -24,7 +24,7 @@ namespace UsabilityDynamics\Module {
        *
        * @type object UsabilityDynamics\Module\UI
        */
-      private $instance;
+      private static $instance;
     
       /**
        * Manager
@@ -45,9 +45,7 @@ namespace UsabilityDynamics\Module {
        *
        * @author peshkov@UD
        */
-      private function __construct( $manager ) {
-        
-      }
+      private function __construct() {}
       
       /**
        * Determine if instance already exists and Return UI Instance
