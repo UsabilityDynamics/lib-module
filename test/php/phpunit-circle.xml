@@ -7,11 +7,12 @@
          processIsolation="false"
          stopOnFailure="false"
          syntaxCheck="false"
-         bootstrap="../bootstrap-circleci.php"
+         debug="true"
+         bootstrap="./bootstrap-circle.php"
 >
     <testsuites>
         <testsuite name="CircleCI Test Suite">
-            <directory>../classes</directory>
+            <directory>./tests</directory>
         </testsuite>
     </testsuites>
 </phpunit>

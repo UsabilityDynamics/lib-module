@@ -57,17 +57,15 @@ module.exports = function build( grunt ) {
      *
      */
     phpunit: {
-      classes: {
-        dir: './test/classes/'
-      },
+      classes: {},
       options: {
-        bin: './vendor/bin/phpunit'
+        bin: './vendor/bin/phpunit',
       },
       local: {
-        configuration: 'test/config/phpunit-local.xml'
+        configuration: './test/php/phpunit.xml'
       },
       circleci: {
-        configuration: 'test/config/phpunit-circleci.xml'
+        configuration: './test/php/phpunit-circle.xml'
       }
     },
 
@@ -148,12 +146,42 @@ module.exports = function build( grunt ) {
       ]
     },
 
-    // CLI Commands.
     shell: {
+      /**
+       * Runs PHPUnit test, creates code coverage and sends it to Scrutinizer
+       */
+      coverageScrutinizer: {
+        command: [
+          'grunt phpunit:circleci --coverage-clover=coverage.clover',
+          'wget https://scrutinizer-ci.com/ocular.phar',
+          'php ocular.phar code-coverage:upload --format=php-clover coverage.clover'
+        ].join( ' && ' ),
+        options: {
+          encoding: 'utf8',
+          stderr: true,
+          stdout: true
+        }
+      },
+      /**
+       * Runs PHPUnit test, creates code coverage and sends it to Code Climate
+       */
+      coverageCodeClimate: {
+        command: [
+          'grunt phpunit:circleci --coverage-clover build/logs/clover.xml',
+          'CODECLIMATE_REPO_TOKEN='+ process.env.CODECLIMATE_REPO_TOKEN + ' ./vendor/bin/test-reporter'
+        ].join( ' && ' ),
+        options: {
+          encoding: 'utf8',
+          stderr: true,
+          stdout: true
+        }
+      },
+      // CLI Command.
       install: {
         options: { stdout: true },
         command: 'composer install --prefer-dist --dev --no-interaction --quiet'
       },
+      // CLI Command.
       update: {
         options: { stdout: true },
         command: 'composer update --prefer-source --no-interaction --quiet'
@@ -188,11 +216,12 @@ module.exports = function build( grunt ) {
     
   });
 
-  // Run Quick Tests.
-  grunt.registerTask( 'test', [ 'clean:composer', 'shell:install', 'mochaTest' , 'phpunit' ] );
+  // Run coverage tests.
+  grunt.registerTask( 'testscrutinizer', [ 'shell:coverageScrutinizer' ] );
+  grunt.registerTask( 'testcodeclimate', [ 'shell:coverageCodeClimate' ] );
   
-  // Run Module Audit.
-  grunt.registerTask( 'test:quality', [ 'phpunit:local', 'phpcs' ] );
+  // Run Local Tests
+  grunt.registerTask( 'localtest', [ 'phpunit:local' ] );
   
   // Build Distribution.
   grunt.registerTask( 'publish', [ 'markdown', 'yuidoc' ] );

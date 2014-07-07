@@ -8,11 +8,11 @@
          stopOnFailure="false"
          syntaxCheck="false"
          debug="true"
-         bootstrap="../bootstrap-local.php"
+         bootstrap="./bootstrap.php"
 >
     <testsuites>
         <testsuite name="CircleCI Test Suite">
-            <directory>../classes</directory>
+            <directory>./tests</directory>
         </testsuite>
     </testsuites>
 </phpunit>
